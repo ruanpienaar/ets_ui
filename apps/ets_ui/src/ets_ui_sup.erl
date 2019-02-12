@@ -8,9 +8,6 @@
 %% Supervisor callbacks
 -export([init/1]).
 
-%% Helper macro for declaring children of supervisor
--define(CHILD(I, Type), {I, {I, start_link, []}, permanent, 5000, Type, [I]}).
-
 -include("ets_ui.hrl").
 
 %% ===================================================================
@@ -25,5 +22,22 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-    {ok, { {one_for_one, 5, 10}, []} }.
-
+    {ok, 
+        {
+            #{
+                strategy  => one_for_one, % optional
+                intensity => 1,           % optional
+                period    => 10           % optional
+            },
+            [
+                #{
+                    id       => webserver_child,               % mandatory
+                    start    => {ets_ui_http, start_link, []}, % mandatory
+                    restart  => permanent,                     % optional
+                    shutdown => brutal_kill,                   % optional
+                    type     => worker,                        % optional
+                    modules  => [ets_ui_http]                  % optional
+                }   
+            ]
+        }
+    }.
