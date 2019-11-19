@@ -4,3 +4,7 @@ table, th, td {
 th {
     cursor: pointer;
 }
+
+body {
+    zoom: 0.8
+}

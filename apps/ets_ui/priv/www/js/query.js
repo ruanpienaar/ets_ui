@@ -4,6 +4,7 @@ $('document').ready(function(){
 
 $("#search").click(function(){
     //
+
 });
 $("#all").click(function(){
     window.location.href = 'all.html?table='+getUrlParameter('table');

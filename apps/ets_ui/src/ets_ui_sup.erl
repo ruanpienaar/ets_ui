@@ -22,7 +22,7 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-    {ok, 
+    {ok,
         {
             #{
                 strategy  => one_for_one, % optional
@@ -37,7 +37,7 @@ init([]) ->
                     shutdown => brutal_kill,                   % optional
                     type     => worker,                        % optional
                     modules  => [ets_ui_http]                  % optional
-                }   
+                }
             ]
         }
     }.

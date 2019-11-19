@@ -7,7 +7,7 @@
 
 init(Req0, Opts) ->
     Req = cowboy_req:reply(
-        200, 
+        200,
         #{
             <<"content-type">> => <<"application/json">>
         },
@@ -28,23 +28,28 @@ all_tables(Table, Acc) ->
     RegName = get_table_reg_name(Owner),
     case exclude(Name, RegName) of
         false ->
-            JsonTable = 
-                case Table of 
-                    Table when is_reference(Table) ->
-                        list_to_binary(erlang:ref_to_list(Table));
-                    _ ->
-                        Table
-                end,
-            [ #{ 
-                table => JsonTable,
+            [ sanitize_map(maps:merge(#{
+                table => Table,
                 name => Name,
-                reg_name => RegName,
-                size => ets:info(Table, size)
-              }
-             | Acc ];
+                reg_name => RegName},
+              maps:from_list(ets:info(Table)))
+              ) | Acc ];
         true ->
             Acc
     end.
+%% @doc References break the json decoder
+%% @end
+sanitize_map(Map) ->
+    maps:map(
+        fun(_K, V) when is_reference(V) ->
+            list_to_binary(erlang:ref_to_list(V));
+           (_K, V) when is_pid(V) ->
+            list_to_binary(erlang:pid_to_list(V));
+           (_K, V) ->
+            V
+        end,
+        Map
+    ).
 
 exclude(Name, RegName) ->
     case lists:member(Name, sys_tables()) of
@@ -62,10 +67,10 @@ get_table_reg_name(Owner) ->
             ProcName
     end.
 
-ignore(true, Reason) -> 
-    throw(Reason);
-ignore(_,_ ) -> 
-    ok.
+% ignore(true, Reason) ->
+%     throw(Reason);
+% ignore(_,_ ) ->
+%     ok.
 
 sys_tables() ->
     [ac_tab,asn1,cdv_dump_index_table,cdv_menu_table,

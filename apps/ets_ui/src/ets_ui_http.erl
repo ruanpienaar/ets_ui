@@ -18,7 +18,7 @@ cowboy_startup() ->
     Dispatch = cowboy_router:compile(Routes),
     Port = application:get_env(?MODULE, http_port, 54321),
     {ok, _} = cowboy:start_clear(
-        ?MODULE, 
+        ?MODULE,
         [{port, Port}],
         #{
             env => #{
@@ -38,6 +38,6 @@ routes() ->
             ets_ui_http_all, []},
         {"/",
             cowboy_static, {priv_file, ets_ui, "www/index.html"}},
-        {"/[...]", 
+        {"/[...]",
             cowboy_static, {priv_dir, ets_ui, "www/"}}
     ].
