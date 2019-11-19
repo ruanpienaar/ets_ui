@@ -32,10 +32,8 @@ routes() ->
     [
         {"/api/tables",
             ets_ui_http_handler, []},
-        {"/api/table/:table_name",
+        {"/api/query",
             ets_ui_http_query, []},
-        {"/api/table/all/:table_name",
-            ets_ui_http_all, []},
         {"/",
             cowboy_static, {priv_file, ets_ui, "www/index.html"}},
         {"/[...]",

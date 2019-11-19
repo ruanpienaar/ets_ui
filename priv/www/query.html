@@ -17,20 +17,25 @@
 <body>
 
     <div class="container">
-        <div>Key</div>
-        <div>
-            <textarea></textarea>
+        <div class="container"><h1>Key:</h1></div>
+        <div class="container">
+            <input class="form-control" style="display: inline;" type="text" id="ets_key"  />
         </div>
-        <div>value</div>
-        <div>
-            <textarea></textarea>
+        <div class="container"><h1>value:</h1></div>
+        <div class="container">
+            <h1></h1><input class="form-control" style="display: inline;" type="text" id="ets_value" /><h1></h1>
         </div>
-        <button id="search" >Search</button>
         <br />
-        <button id="all" >All</button>
-        <br />
-        <button id="download" >Download</button>
-
+        <div class="container">
+            <button class="form-control" id="search" >Search</button>
+            <br />
+            <hr />
+            <button class="form-control" id="page" >Page through table</button>
+            <br />
+            <!-- <button class="form-control" id="all" >All</button> -->
+            <!-- <br /> -->
+            <button class="form-control" id="download" >Download table contents</button>
+        </div>
     </div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
