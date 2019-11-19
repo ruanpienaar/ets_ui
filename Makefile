@@ -1,8 +1,5 @@
 .PHONY: release compile get-deps test clean dialyzer rebar3
 
-release: compile
-	@./rebar3 release
-
 compile: rebar3 get-deps
 	@./rebar3 compile
 
