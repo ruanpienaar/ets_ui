@@ -9,6 +9,21 @@ $('document').ready(function(){
         $('#ets_value').val(page_load_ets_value);
     }
 
+    var query_type = getUrlParameter('query_type');
+    if ( query_type != ''){
+        //alert(query_type);
+        // lookup
+        if (query_type == 'lookup') {
+            $('#query_type').prop('checked', true);
+        } if (query_type == 'match_object'){
+            $('#query_type').prop('checked', false);
+        }
+        // match_object
+    } else {
+        //query_type = "checked"
+        $('#query_type').prop('checked', true);
+    }
+
     if( page_load_ets_key != '' || page_load_ets_value != '' ){
 
         var url = window.location.href;
@@ -29,6 +44,9 @@ $("#search").click(function(){
 
     var ets_key = $('#ets_key').val();
     var ets_value = $('#ets_value').val();
+    var query_type = $('#query_type')[0].checked;
+
+    // alert(query_type);
 
     if( ets_key != '' || ets_value != '' ){
 
@@ -40,6 +58,12 @@ $("#search").click(function(){
 
         if(ets_value != ''){
             query_portion += '&value='+encodeURIComponent(ets_value);
+        }
+
+        if(query_type == true){
+            query_portion += '&query_type='+encodeURIComponent('lookup');
+        } else {
+            query_portion += '&query_type='+encodeURIComponent('match_object');
         }
 
         window.location.href = 'query.html?table='+getUrlParameter('table')+query_portion;
