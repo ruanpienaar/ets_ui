@@ -105,6 +105,11 @@ json_sanitize_key(Key) when is_tuple(Key) ->
 json_sanitize_key(Key) when is_list(Key) ->
     Key;
 json_sanitize_key(Key) when is_atom(Key) ->
+    Key;
+json_sanitize_key(Key) when is_integer(Key) ->
+    Key;
+json_sanitize_key(Key) ->
+    logger:info("Handing any format key ~p", [Key]),
     Key.
 
 term_to_bin_string(Term) ->
