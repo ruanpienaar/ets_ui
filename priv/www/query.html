@@ -8,32 +8,54 @@
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.0/css/bootstrap.min.css" integrity="sha384-PDle/QlgIONtM1aqA2Qemk5gPOE7wFq8+Em+G/hmo5Iq0CCmYZLv3fVRDJ4MMwEA" crossorigin="anonymous">
         <link rel="stylesheet" href="css/main.css">
         <link rel="icon" href="images/favicon.png">
+
+        <link rel="stylesheet" href="highlight/styles/default.css">
+        <script src="highlight/highlight.pack.js"></script>
+
+
     </head>
     <body>
-        <div class="container">
-            <form>
-                <div class="container"><h1>Key:</h1></div>
-                <div class="container">
-                    <input class="form-control" style="display: inline;" type="text" id="ets_key"  />
-                    <input type="checkbox" id="query_type" value="checked" />
-                    <label for="query_type"><h4>Lookup</h4>( uncheck for match_object )</label>
-                </div>
-                <div class="container"><h1>value:</h1></div>
-                <div class="container">
-                    <h1></h1><input class="form-control" style="display: inline;" type="text" id="ets_value" /><h1></h1>
-                </div>
+        <div class="container-fluid">
+          <h3><a href="index.html">Tables</a></h3>
+          <div class="row">
+            <div class="col-sm">
+
+                <div><h4>Table:<span id="tblname"></span></h4></div>
+                <div>Key:</div>
+                <input class="form-control" style="display: inline;" type="text" id="ets_key"  />
+                <select class="form-control" id="key_type">
+                    <option value="atom">atom</option>
+                    <option value="binary">binary</option>
+                    <option value="bitstring">bitstring</option>
+                    <option value="boolean">boolean</option>
+                    <option value="float">float</option>
+                    <option value="function">function</option>
+                    <option value="integer">integer</option>
+                    <option value="list">list</option>
+                    <option value="map">map</option>
+                    <option value="number">number</option>
+                    <option value="pid">pid</option>
+                    <option value="port">port</option>
+                    <option value="reference">reference</option>
+                    <option value="tuple">tuple</option>
+                </select>
+                <button type="button" class="form-control" id="lookup" >Lookup</button>
+
+                <label for="query_type">Tuple wildcard ( A.K.A ets:match_spec )</label>
+                <input class="form-control" style="display: inline;" type="text" id="tuple_value" />
+                <button type="button" class="form-control" id="tuple_wildcard" >Match Spec</button>
+
                 <br />
-                <div class="container">
-                    <button class="form-control" id="search" >Search</button>
-                    <br />
-                    <hr />
-                    <button class="form-control" id="page" >Page through table</button>
-                    <br />
-                    <!-- <button class="form-control" id="all" >All</button> -->
-                    <!-- <br /> -->
-                    <button class="form-control" id="download" >Download table contents</button>
-                </div>
-            </form>
+                <hr />
+                <button class="form-control" id="page" >Page through table</button>
+                <br />
+                <button class="form-control" id="download" >Download table contents</button>
+            </div>
+            <div class="col-sm">
+              Results:
+              <pre><code class="json" id="query_results"></code></pre>
+            </div>
+          </div>
         </div>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
