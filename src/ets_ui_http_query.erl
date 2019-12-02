@@ -113,13 +113,21 @@ json_sanitize_key(Key) ->
     Key.
 
 term_to_bin_string(Term) ->
-    erlang:iolist_to_binary([list_to_binary(io_lib:format("~p", [Term]))]).
+    erlang:iolist_to_binary(
+        [
+            list_to_binary(
+                io_lib:format("~p", [Term])
+            )
+        ]
+    ).
 
 normalise_table_name(Table) when is_binary(Table) ->
     list_to_atom(binary_to_list(Table)).
 
 normalise_erlang_term(Key, <<"atom">>) ->
-    list_to_atom(binary_to_list(Key)).
+    list_to_atom(binary_to_list(Key));
+normalise_erlang_term(Key, <<"binary_string">>) ->
+    Key.
 
 
 % ensure_atom()
