@@ -30,8 +30,10 @@ cowboy_startup() ->
 % -spec routes() -> list({term(), atom(), term()}).
 routes() ->
     [
+        {"/help",
+            ets_ui_http_help, []},
         {"/api/tables",
-            ets_ui_http_handler, []},
+            ets_ui_http_tables, []},
         {"/api/query",
             ets_ui_http_query, []},
         {"/",

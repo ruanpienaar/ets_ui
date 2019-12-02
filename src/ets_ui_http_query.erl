@@ -1,7 +1,10 @@
 -module(ets_ui_http_query).
 
+-behaviour(cowboy_handler).
+
 -define(DEFAULT_PAGESIZE, 20).
--define(DEFAULT_RESP_HEAD, #{<<"content-type">> => <<"application/json">>}).
+
+-include("ets_ui.hrl").
 
 -export([
     init/2
@@ -12,7 +15,7 @@
 -define(PAGESIZE, <<"pagesize">>).
 
 -ifdef(TEST).
--compile(export_all).
+
 -endif.
 
 init(Req, Opts) ->

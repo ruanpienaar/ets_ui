@@ -1,4 +1,6 @@
--module(ets_ui_http_handler).
+-module(ets_ui_http_tables).
+
+-behaviour(cowboy_handler).
 
 -export([
     init/2,
