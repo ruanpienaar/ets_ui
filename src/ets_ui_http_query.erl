@@ -127,7 +127,9 @@ normalise_table_name(Table) when is_binary(Table) ->
 normalise_erlang_term(Key, <<"atom">>) ->
     list_to_atom(binary_to_list(Key));
 normalise_erlang_term(Key, <<"binary_string">>) ->
-    Key.
+    Key;
+normalise_erlang_term(Key, <<"integer">>) ->
+    list_to_integer(binary_to_list(Key)).
 
 
 % ensure_atom()
