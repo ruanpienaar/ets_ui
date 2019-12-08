@@ -1,10 +1,10 @@
 -module(ets_ui_tests).
 -include_lib("eunit/include/eunit.hrl").
 
-unit_test_() ->
+web_requests_unit_test_() ->
     {setup,
      % Setup Fixture
-     fun() -> 
+     fun() ->
          xxx
      end,
      % Cleanup Fixture
@@ -14,9 +14,9 @@ unit_test_() ->
      % List of tests
      [
        % Example test
-       {":func1/0", fun func1/0}
+       {"Web request help/0", fun help/0}
      ]
     }.
 
-func1() ->
+help() ->
     ?assert(true).

@@ -3,6 +3,7 @@
 -behaviour(cowboy_handler).
 
 -define(DEFAULT_PAGESIZE, 20).
+-define(DEFAULT_PAGE, 0).
 
 -include("ets_ui.hrl").
 
@@ -10,48 +11,68 @@
     init/2
 ]).
 
--define(TABLE, <<"table">>).
--define(PAGE, <<"page">>).
--define(PAGESIZE, <<"pagesize">>).
-
 -ifdef(TEST).
-
+-export([
+    get_next_n_objects/3,
+    create_reply/4,
+    create_reply/5
+]).
 -endif.
 
-init(Req, Opts) ->
-
+init(Req, StateMap) ->
+    % {cowboy_rest, Req, StateMap}.
     %% 1- use rest
     %% 2- transform data here ( like table to binary )
-
     % {cowboy_rest, Req, StateMap}.
-    handle_request(
-        Req, cowboy_req:match_qs([
-            {table, nonempty},
-            {key, [], undefined},
-            {key_type, [], undefined},
-            {value, [], undefined},
-            {page, int, 0},
-            {pagesize, int, ?DEFAULT_PAGESIZE},
-            {tuple_wildcard, [], undefined}
-            ], Req),
-        Opts
-    ).
+
+    % TableChecker = fun(_, TableBinStr) ->
+    %     NormTable = normalise_table_name(TableBinStr),
+    %     case ets:info(NormTable, id) of
+    %         undefined ->
+    %             {error, {table, undefined}};
+    %         _ ->
+    %             {ok, NormTable}
+    %     end
+    % end,
+
+    QueryMap = cowboy_req:match_qs([
+        {table, nonempty },% [TableChecker]},
+        {key, [], undefined},
+        {key_type, [], undefined},
+        {value, [], undefined},
+        % {page, int, ?DEFAULT_PAGE},
+        {continuation, [], undefined},
+        {pagesize, int, ?DEFAULT_PAGESIZE},
+        {tuple_wildcard, [], undefined}
+        ], Req
+    ),
+
+    % case #{ table := {error, {table, undefined}} } = QueryMap of
+    %     false ->
+            handle_request(
+                Req,
+                QueryMap,
+                StateMap
+            ).
+    %     true ->
+    %         create_reply(400, <<"">>, Req, StateMap)
+    % end.
 
 %% ets:match_object, match tuple sent in as `tuple_wildcard`
 handle_request(Req, #{
         table := TableBinStr,
         tuple_wildcard := TupleWildCard,
         page := _Page,
-        pagesize := PageSize} = _Params, Opts) when TupleWildCard /= undefined ->
+        pagesize := _PageSize} = _Params, Opts) when TupleWildCard /= undefined ->
     Json = jsx:encode(
-        make_json(
+        json_rows(
             ets:match_object(
                 normalise_table_name(TableBinStr),
                 normalise_erlang_term(TupleWildCard, <<"tuple">>)),
             []
         )
     ),
-    create_reply(200, ?DEFAULT_RESP_HEAD, Json, Req, Opts);
+    create_reply(200, Json, Req, Opts);
 %% ets:lookup on key, key sent in, with key type
 handle_request(Req, #{
         table := TableBinStr,
@@ -59,26 +80,35 @@ handle_request(Req, #{
         key_type := KeyType} = _Params, Opts) when Key /= undefined ->
     NKey = normalise_erlang_term(Key, KeyType),
     Json = jsx:encode(
-        make_json(
+        json_rows(
             ets:lookup(normalise_table_name(TableBinStr), NKey),
             []
         )
     ),
-    create_reply(200, ?DEFAULT_RESP_HEAD, Json, Req, Opts);
+    create_reply(200, Json, Req, Opts);
 %% listing table entries per page and pagesize
+
+%% TODO: Fix page sending in continuation... ( and the erlang term type )
+
 handle_request(Req, #{
         table := TableBinStr,
-        page := Page,
+        continuation := Continuation,
         pagesize := PageSize} = _Params, Opts) ->
-    Filter = fun(_k, _Val) -> true end, %% TODO: placeholder filter for later.
-    Rows = paged(normalise_table_name(TableBinStr), Page, PageSize, Filter),
+    #{
+        continuation := NextContinuation,
+        entries := Rows
+     } = get_next_n_objects(
+        normalise_table_name(TableBinStr), Continuation, PageSize),
     RowsDisplay =
-        make_json(Rows, []),
-    create_reply(200, ?DEFAULT_RESP_HEAD, jsx:encode(RowsDisplay), Req, Opts).
+        json_rows(Rows, []),
+    create_reply(200, jsx:encode(#{
+        continuation => NextContinuation,
+        rows => RowsDisplay
+    }), Req, Opts).
 
-make_json([], R) ->
+json_rows([], R) ->
     R;
-make_json([Entry|T], R) ->
+json_rows([Entry|T], R) ->
     Key = element(1, Entry),
     FormattedValues = format_values(Entry, size(Entry)),
     RowMap = #{
@@ -86,39 +116,53 @@ make_json([Entry|T], R) ->
         key_type => key_type(Key),
         values => FormattedValues
     },
-    make_json(T, [RowMap|R]).
+    json_rows(T, [RowMap|R]).
 
-paged(Table, Page, PageSize, Filter) when PageSize > 0 ->
-    SkipAmount = Page * PageSize,
-    case paged_first(Table, SkipAmount, Filter) of
+%% @doc Here we deal with the key first to get to the staring point.
+%% @end
+get_next_n_objects(Table, undefined, PageSize) when PageSize > 0 ->
+    get_next_n_objects(Table, ets:first(Table), PageSize);
+get_next_n_objects(Table, '$end_of_table' = Key, PageSize) when PageSize > 0 ->
+    #{
+        continuation => Key,
+        entries => []
+    };
+get_next_n_objects(Table, Continuation, PageSize) when PageSize > 0 ->
+    get_next_n_objects(Table, PageSize, Continuation, ets:lookup(Table, Continuation), []).
+
+%% @doc Here we deal with the key and entry, and try and fill up the page count
+%%      with entries
+%% @end
+% get_next_n_objects(Table, 0, Key, _, R) ->
+
+get_next_n_objects(Table, PageCount, Key, [Entry], R) ->
+    case ets:next(Table, Key) of
         '$end_of_table' ->
-            [];
-        {First, Objects} ->
-            paged(Table, PageSize, Filter, First, Objects)
+            #{
+                continuation => '$end_of_table',
+                entries => lists:reverse([Entry|R])
+            };
+        NextKey ->
+            case PageCount-1 of
+                0 ->
+                    #{
+                        continuation => ets:next(Table, Key),% Key, % Should that not be ets:next ?
+                        entries => lists:reverse([Entry|R])
+                    };
+                NewPageCount ->
+                    get_next_n_objects(Table, NewPageCount, NextKey, ets:lookup(Table, NextKey), [Entry|R])
+            end
     end.
 
-paged(_Table, _PageSize, _Filter, '$end_of_table', Acc) ->
-    lists:flatten(Acc);
-paged(_Table, PageSize, _Filter, _Key, Acc) when length(Acc) >= PageSize ->
-    lists:flatten(Acc);
-paged(Table, PageSize, Filter, Key, Acc) ->
-    case ets_ui_ets:filter_next(Table, Key, Filter) of
-        '$end_of_table' ->
-            Acc;
-        {Next, Objects} ->
-            paged(Table, PageSize, Filter, Next, [Objects|Acc])
-    end.
+% get_next_n_objects(_Table, 0, Key, Acc) ->
+%     #{ continuation => Key, entries => lists:reverse(Acc) };
+% get_next_n_objects(_Table, _PageSize, '$end_of_table', Acc) ->
+%     #{ continuation => '$end_of_table', entries => lists:reverse(Acc) };
+% get_next_n_objects(Table, PageSize, NextKey, Acc) ->
+%     get_next_n_objects(Table, PageSize-1, ets:next(Table, NextKey), [ets:lookup(Table, NextKey)|Acc]).
 
-paged_first(Table, SkipAmount, Filter) ->
-    FirstIterator = ets_ui_ets:filter_first(Table, Filter),
-    paged_first(Table, FirstIterator, SkipAmount, Filter).
-
-paged_first(_Table, '$end_of_table', _SkipAmount, _Filter) ->
-    '$end_of_table';
-paged_first(_Table, Iterator, SkipAmount, _Filter) when SkipAmount =< 0 ->
-    Iterator;
-paged_first(Table, {Key, _Objects}, SkipAmount, Filter) ->
-    paged_first(Table, ets_ui_ets:filter_next(Table, Key, Filter), SkipAmount - 1, Filter).
+create_reply(StatusCode, ResponseValue, Req, Opts) ->
+    create_reply(StatusCode, ?DEFAULT_RESP_HEAD, ResponseValue, Req, Opts).
 
 create_reply(StatusCode, ResponseHeaders, ResponseValue, Req, Opts) ->
     {ok, cowboy_req:reply(

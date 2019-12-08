@@ -31,11 +31,11 @@ cowboy_startup() ->
 routes() ->
     [
         {"/help",
-            ets_ui_http_help, []},
+            ets_ui_http_help, #{}},
         {"/api/tables",
-            ets_ui_http_tables, []},
+            ets_ui_http_tables, #{}},
         {"/api/query",
-            ets_ui_http_query, []},
+            ets_ui_http_query, #{}},
         {"/",
             cowboy_static, {priv_file, ets_ui, "www/index.html"}},
         {"/[...]",
