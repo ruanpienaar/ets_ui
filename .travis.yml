@@ -7,12 +7,11 @@ before_script:
   kerl list installations
 
 otp_release:
-    - 20.0
-    - 20.1
-    - 20.2
-    - 20.3
-    - 21.0
+    - 21.1
+    - 21.2
+    - 21.3
     - 22.0
+    - 22.1
 
 install:
   - wget https://s3.amazonaws.com/rebar3/rebar3 && chmod +x rebar3
