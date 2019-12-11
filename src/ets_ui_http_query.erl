@@ -47,12 +47,17 @@ init(Req, StateMap) ->
         ], Req
     ),
 
+    #{ table := TableBinStr } = QueryMap,
+    Table = normalise_table_name(TableBinStr),
+
+    ets:info()
+
     % case #{ table := {error, {table, undefined}} } = QueryMap of
     %     false ->
             handle_request(
                 Req,
                 QueryMap,
-                StateMap
+                StateMap#{ table => Table }
             ).
     %     true ->
     %         create_reply(400, <<"">>, Req, StateMap)
@@ -60,24 +65,24 @@ init(Req, StateMap) ->
 
 %% ets:match_object, match tuple sent in as `tuple_wildcard`
 handle_request(Req, #{
-        table := TableBinStr,
         tuple_wildcard := TupleWildCard,
         page := _Page,
-        pagesize := _PageSize} = _Params, Opts) when TupleWildCard /= undefined ->
+        pagesize := _PageSize} = _Params, StateMap)
+        when TupleWildCard /= undefined ->
     Json = jsx:encode(
         json_rows(
             ets:match_object(
-                normalise_table_name(TableBinStr),
+
                 normalise_erlang_term(TupleWildCard, <<"tuple">>)),
             []
         )
     ),
-    create_reply(200, Json, Req, Opts);
+    create_reply(200, Json, Req, StateMap);
 %% ets:lookup on key, key sent in, with key type
 handle_request(Req, #{
         table := TableBinStr,
         key := Key,
-        key_type := KeyType} = _Params, Opts) when Key /= undefined ->
+        key_type := KeyType} = _Params, StateMap) when Key /= undefined ->
     NKey = normalise_erlang_term(Key, KeyType),
     Json = jsx:encode(
         json_rows(
@@ -85,7 +90,7 @@ handle_request(Req, #{
             []
         )
     ),
-    create_reply(200, Json, Req, Opts);
+    create_reply(200, Json, Req, StateMap);
 %% listing table entries per page and pagesize
 
 %% TODO: Fix page sending in continuation... ( and the erlang term type )
@@ -93,7 +98,7 @@ handle_request(Req, #{
 handle_request(Req, #{
         table := TableBinStr,
         continuation := Continuation,
-        pagesize := PageSize} = _Params, Opts) ->
+        pagesize := PageSize} = _Params, StateMap) ->
     #{
         continuation := NextContinuation,
         entries := Rows
@@ -104,7 +109,7 @@ handle_request(Req, #{
     create_reply(200, jsx:encode(#{
         continuation => NextContinuation,
         rows => RowsDisplay
-    }), Req, Opts).
+    }), Req, StateMap).
 
 json_rows([], R) ->
     R;
@@ -161,16 +166,16 @@ get_next_n_objects(Table, PageCount, Key, [Entry], R) ->
 % get_next_n_objects(Table, PageSize, NextKey, Acc) ->
 %     get_next_n_objects(Table, PageSize-1, ets:next(Table, NextKey), [ets:lookup(Table, NextKey)|Acc]).
 
-create_reply(StatusCode, ResponseValue, Req, Opts) ->
-    create_reply(StatusCode, ?DEFAULT_RESP_HEAD, ResponseValue, Req, Opts).
+create_reply(StatusCode, ResponseValue, Req, StateMap) ->
+    create_reply(StatusCode, ?DEFAULT_RESP_HEAD, ResponseValue, Req, StateMap).
 
-create_reply(StatusCode, ResponseHeaders, ResponseValue, Req, Opts) ->
+create_reply(StatusCode, ResponseHeaders, ResponseValue, Req, StateMap) ->
     {ok, cowboy_req:reply(
         StatusCode,
         ResponseHeaders,
         ResponseValue,
         Req
-    ), Opts}.
+    ), StateMap}.
 
 json_sanitize_key(Key) when is_tuple(Key) ->
     term_to_bin_string(Key);

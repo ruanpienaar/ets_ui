@@ -1,0 +1,7 @@
+ ☐ create table checker on table value on query mod
+ ☐ use rest on cowboy_handler modules
+ ☐ Add some system related items to the dashboard too
+    16> erlang:system_info(ets_count).
+    38
+    17> erlang:system_info(ets_limit).
+    8192

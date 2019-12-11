@@ -3,9 +3,14 @@
 -behaviour(cowboy_handler).
 
 -export([
-    init/2,
+    init/2
+]).
+
+-ifdef(TEST).
+-export([
     tables/1
 ]).
+-endif.
 
 init(Req0, Opts) ->
     Req = cowboy_req:reply(
@@ -25,10 +30,11 @@ tables(ets) ->
     lists:foldl(fun all_tables/2, [], ets:all()).
 
 all_tables(Table, Acc) ->
-    Name = ets:info(Table, name),
-    Owner = ets:info(Table, owner),
+    Info = ets:info(Table),
+    {name, Name} = proplists:lookup(name, Info),
+    {owner, Owner} = proplists:lookup(owner, Info),
     RegName = get_table_reg_name(Owner),
-    case exclude(Name, RegName) of
+    case exclude(Info, Name, RegName) of
         false ->
             [ sanitize_map(maps:merge(#{
                 table => Table,
@@ -53,8 +59,14 @@ sanitize_map(Map) ->
         Map
     ).
 
-exclude(Name, RegName) ->
-    case lists:member(Name, sys_tables()) of
+exclude(Info, Name, RegName) ->
+    {protection, Protec} = proplists:lookup(protection, Info),
+    case
+        lists:member(Name, sys_tables())
+        %% TODO: Check that the front-end/api calls don't query private tables
+        % orelse
+        % Protec =:= private
+    of
         true ->
             true;
         false ->
@@ -68,11 +80,6 @@ get_table_reg_name(Owner) ->
         {registered_name, ProcName} ->
             ProcName
     end.
-
-% ignore(true, Reason) ->
-%     throw(Reason);
-% ignore(_,_ ) ->
-%     ok.
 
 sys_tables() ->
     [ac_tab,asn1,cdv_dump_index_table,cdv_menu_table,
