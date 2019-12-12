@@ -50,7 +50,11 @@ init(Req, StateMap) ->
     #{ table := TableBinStr } = QueryMap,
     Table = normalise_table_name(TableBinStr),
 
-    ets:info()
+    case ets:info(Table) of
+        undefined ->
+            create_reply(400, <<"">>, Req, StateMap);
+        _ ->
+        
 
     % case #{ table := {error, {table, undefined}} } = QueryMap of
     %     false ->
@@ -62,6 +66,8 @@ init(Req, StateMap) ->
     %     true ->
     %         create_reply(400, <<"">>, Req, StateMap)
     % end.
+
+    end.
 
 %% ets:match_object, match tuple sent in as `tuple_wildcard`
 handle_request(Req, #{
