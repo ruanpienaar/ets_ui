@@ -230,6 +230,8 @@ http_unit_test_() ->
         ets:new(test_table_1, [public, named_table, ordered_set]),
         {ok, Apps} = application:ensure_all_started(cowboy),
         {ok, Apps2} = application:ensure_all_started(holster),
+        ok = application:load(ets_ui),
+        ok = application:set_env(ets_ui, http_port, 0),
         {ok, Pid} = ets_ui_http:start_link(),
         {{ok, Pid}, lists:reverse(Apps) ++ lists:reverse(Apps2)}
      end,
@@ -239,11 +241,23 @@ http_unit_test_() ->
         true = erlang:exit(Pid, kill)
      end,
      [
-        {"api query", fun api_query/0}
+        {foreach,
+         fun() ->
+            ok
+         end,
+         fun(_) ->
+            ets:delete_all_objects(test_table_1)
+         end,
+         [
+            {"api query ( no results )", fun api_query_no_results/0},
+            {"api query ( one result )", fun api_query_one_result/0},
+            {"api query ( lots of results )", fun api_query_lots_results/0}
+         ]
+        }
      ]
     }.
 
-api_query() ->
+api_query_no_results() ->
 
     %% TODO: use the eunit ifdef macro to enable/disable logging
 
@@ -267,7 +281,9 @@ api_query() ->
             <<"rows">> => []
         },
         jsx:decode(WBody, [return_maps])
-    ),
+    ).
+
+api_query_one_result() ->
 
     %% [setup] Insert something
     true = ets:insert(test_table_1, {1, 1}),
@@ -300,12 +316,13 @@ api_query() ->
             ]
         },
         jsx:decode(XBody, [return_maps])
-    ),
+    ).
+
+api_query_lots_results() ->
 
     %% [setup] Insert some more!!!
     [ true = ets:insert(test_table_1, {N, N}) || N <- lists:seq(2, 1000) ],
 
-    %% Query with continuation
     Y = erlang_testing_web:url_req("http://localhost:54321/api/query?table=test_table_1"),
     % ?debugFmt("~p\n", [Y]),
     ?assertMatch(
@@ -368,6 +385,69 @@ api_query() ->
         jsx:decode(YBody, [return_maps])
     ),
     ok.
+
+api_query_with_continuation() ->
+  [ true = ets:insert(test_table_1, {N, N}) || N <- lists:seq(1, 1000) ],
+
+  Y = erlang_testing_web:url_req("http://localhost:54321/api/query?table=test_table_1&pagesize=3"),
+  % ?debugFmt("~p\n", [Y]),
+  ?assertMatch(
+      {ok,{200,
+       [{<<"content-length">>,<<"1050">>},
+        {<<"content-type">>,<<"application/json">>},
+        {<<"date">>,_},
+        {<<"server">>,<<"Cowboy">>}],
+       _ % Body
+       }},
+      Y
+  ),
+  {ok, {200, _, YBody}} = Y,
+  ?debugFmt("~p\n", [jsx:decode(YBody, [return_maps])]),
+  ?assertEqual(
+      #{
+          <<"continuation">> => 4,
+          <<"rows">> =>
+            [#{<<"key">> => 3,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"2">> => <<"3">>}},
+             #{<<"key">> => 2,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"2">> => <<"2">>}},
+             #{<<"key">> => 1,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"2">> => <<"1">>}}]
+      },
+      jsx:decode(YBody, [return_maps])
+  ),
+
+  Z = erlang_testing_web:url_req("http://localhost:54321/api/query?table=test_table_1&pagesize=3&continuation=4"),
+  % ?debugFmt("~p\n", [Z]),
+  ?assertMatch(
+      {ok,{200,
+       [{<<"content-length">>,<<"1050">>},
+        {<<"content-type">>,<<"application/json">>},
+        {<<"date">>,_},
+        {<<"server">>,<<"Cowboy">>}],
+       _ % Body
+       }},
+      Z
+  ),
+  {ok, {200, _, ZBody}} = Z,
+  ?debugFmt("~p\n", [jsx:decode(YBody, [return_maps])]),
+  ?assertEqual(
+      #{
+          <<"continuation">> => 7,
+          <<"rows">> =>
+            [#{<<"key">> => 6,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"2">> => <<"6">>}},
+             #{<<"key">> => 5,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"2">> => <<"5">>}},
+             #{<<"key">> => 4,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"2">> => <<"4">>}}]
+      },
+      jsx:decode(ZBody, [return_maps])
+  ),
+
+
+
+  ok.
 
 % create_reply() ->
 %     ?assertEqual(

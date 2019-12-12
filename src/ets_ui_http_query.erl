@@ -24,7 +24,6 @@ init(Req, StateMap) ->
     %% 1- use rest
     %% 2- transform data here ( like table to binary )
     % {cowboy_rest, Req, StateMap}.
-
     % TableChecker = fun(_, TableBinStr) ->
     %     NormTable = normalise_table_name(TableBinStr),
     %     case ets:info(NormTable, id) of
@@ -34,7 +33,6 @@ init(Req, StateMap) ->
     %             {ok, NormTable}
     %     end
     % end,
-
     QueryMap = cowboy_req:match_qs([
         {table, nonempty },% [TableChecker]},
         {key, [], undefined},
@@ -46,70 +44,80 @@ init(Req, StateMap) ->
         {tuple_wildcard, [], undefined}
         ], Req
     ),
-
     #{ table := TableBinStr } = QueryMap,
     Table = normalise_table_name(TableBinStr),
-
     case ets:info(Table) of
         undefined ->
             create_reply(400, <<"">>, Req, StateMap);
         _ ->
-        
-
-    % case #{ table := {error, {table, undefined}} } = QueryMap of
-    %     false ->
-            handle_request(
-                Req,
-                QueryMap,
-                StateMap#{ table => Table }
-            ).
-    %     true ->
-    %         create_reply(400, <<"">>, Req, StateMap)
-    % end.
-
+        % case #{ table := {error, {table, undefined}} } = QueryMap of
+        %     false ->
+                handle_request(
+                    Req,
+                    QueryMap,
+                    StateMap#{ table => Table }
+                )
+        %     true ->
+        %         create_reply(400, <<"">>, Req, StateMap)
+        % end.
     end.
 
 %% ets:match_object, match tuple sent in as `tuple_wildcard`
-handle_request(Req, #{
-        tuple_wildcard := TupleWildCard,
-        page := _Page,
-        pagesize := _PageSize} = _Params, StateMap)
+%% TODO: do match object with list of entries...!!!!
+%% 
+%% match_object(Tab, Pattern, Limit) ->
+%%                 {[Object], Continuation} | '$end_of_table'
+%%
+%% match_object(Continuation) ->
+%%                {[Object], Continuation} | '$end_of_table'
+handle_request(
+        Req, 
+        #{
+            tuple_wildcard := TupleWildCard,
+            page := _Page,
+            pagesize := _PageSize
+        },
+        #{ table := Table } = StateMap)
         when TupleWildCard /= undefined ->
     Json = jsx:encode(
         json_rows(
             ets:match_object(
-
+		Table,
                 normalise_erlang_term(TupleWildCard, <<"tuple">>)),
             []
         )
     ),
     create_reply(200, Json, Req, StateMap);
 %% ets:lookup on key, key sent in, with key type
-handle_request(Req, #{
-        table := TableBinStr,
-        key := Key,
-        key_type := KeyType} = _Params, StateMap) when Key /= undefined ->
+handle_request(
+        Req, 
+        #{
+            key := Key,
+            key_type := KeyType
+        }, 
+        #{ table := Table } = StateMap) when Key /= undefined ->
     NKey = normalise_erlang_term(Key, KeyType),
     Json = jsx:encode(
         json_rows(
-            ets:lookup(normalise_table_name(TableBinStr), NKey),
+            ets:lookup(Table, NKey),
             []
         )
     ),
     create_reply(200, Json, Req, StateMap);
 %% listing table entries per page and pagesize
 
-%% TODO: Fix page sending in continuation... ( and the erlang term type )
-
-handle_request(Req, #{
-        table := TableBinStr,
-        continuation := Continuation,
-        pagesize := PageSize} = _Params, StateMap) ->
+%% TODO: Fix page sending in continuation... ( and the erlang term type for continuation )
+handle_request(
+        Req, 
+        #{
+            continuation := Continuation,
+            pagesize := PageSize
+        }, 
+        #{ table := Table } = StateMap) ->
     #{
         continuation := NextContinuation,
         entries := Rows
-     } = get_next_n_objects(
-        normalise_table_name(TableBinStr), Continuation, PageSize),
+     } = get_next_n_objects(Table, Continuation, PageSize),
     RowsDisplay =
         json_rows(Rows, []),
     create_reply(200, jsx:encode(#{
@@ -133,7 +141,7 @@ json_rows([Entry|T], R) ->
 %% @end
 get_next_n_objects(Table, undefined, PageSize) when PageSize > 0 ->
     get_next_n_objects(Table, ets:first(Table), PageSize);
-get_next_n_objects(Table, '$end_of_table' = Key, PageSize) when PageSize > 0 ->
+get_next_n_objects(_Table, '$end_of_table' = Key, PageSize) when PageSize > 0 ->
     #{
         continuation => Key,
         entries => []

@@ -16,7 +16,7 @@ cowboy_startup() ->
         {'_', routes()}
     ],
     Dispatch = cowboy_router:compile(Routes),
-    Port = application:get_env(?MODULE, http_port, 54321),
+    Port = application:get_env(ets_ui, http_port, 0), % 54321),
     {ok, _} = cowboy:start_clear(
         ?MODULE,
         [{port, Port}],

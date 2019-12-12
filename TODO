@@ -5,3 +5,6 @@
     38
     17> erlang:system_info(ets_limit).
     8192
+☐ Run ranch server on port 0 - 2> ranch_server:get_addr(ets_ui_http).
+  {{0,0,0,0},42587}
+☐ make a "use this key" button under each row, to fill in the key in the search textbox
