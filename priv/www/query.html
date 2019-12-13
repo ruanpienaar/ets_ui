@@ -12,7 +12,7 @@
         <script src="highlight/highlight.pack.js"></script>
 
     </head>
-    <body>
+    <body><form>
         <div class="container-fluid">
             <h3><a href="index.html">Tables</a></h3>
             <div class="row">
@@ -50,9 +50,11 @@
                 <button class="form-control" >Prev</button>
                 <div>Continuation:</div>
                 <div id="continuation"></div>
+                <input type="hidden" name="continuation_val" id="continuation_val" />
                 <div>Data type:</div>
                 <div id="key_data_type"></div>
-                <button id="next" class="form-control" >Next</button>
+                <input type="hidden" name="key_data_type_val" id="key_data_type_val" />
+                <button type="button" id="next" class="form-control" >Next</button>
             </div>
             <div class="row">
                 <div>
@@ -65,5 +67,5 @@
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.0/js/bootstrap.min.js" integrity="sha384-7aThvCh9TypR7fIc2HV4O/nFMVCBwyIUKL8XCtKE+8xgCgl/PQGuFsvShjr74PBp" crossorigin="anonymous"></script>
         <script src="js/common.js"></script>
         <script src="js/query.js"></script>
-    </body>
+    </form></body>
 </html>

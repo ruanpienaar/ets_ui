@@ -37,13 +37,13 @@ function tuple_wildcard(){
 
 function get_next() {
     var table = getUrlParameter('table');
-    var continuation = $('#continuation').html();
-    var key_data_type = $('#key_data_type').html();
-    if( continuation != '' ){
+    var continuation_val = $('#continuation_val').val();
+    var key_data_type_val = $('#key_data_type_val').val();
+    if( continuation_val != '' && key_data_type_val != '' ){
         var query_portion =
         'table='+encodeURIComponent(table)+
-        '&continuation='+encodeURIComponent(continuation)+
-        '&key_type='+encodeURIComponent(key_data_type);
+        '&continuation='+encodeURIComponent(continuation_val)+
+        '&key_type='+encodeURIComponent(key_data_type_val);
         do_query(query_portion, hljs);
     }
 }
@@ -58,11 +58,15 @@ function do_query(query_portion, hljs){
 function get_results_and_rehighlight_results(data, hljs) {
     $('#query_results').empty();
     $('#continuation').empty();
+    $('#continuation_val').empty();
     $('#key_data_type').empty();
+    $('#key_data_type_val').empty();
     var jsonstring = JSON.stringify(data.rows, null, 2);
     $('#query_results').append(jsonstring);
     $('#continuation').append(data.continuation);
+    $('#continuation_val').val(data.continuation);
     $('#key_data_type').append(data.key_type);
+    $('#key_data_type_val').val(data.key_type);
     hljs.initHighlighting();
 }
 
