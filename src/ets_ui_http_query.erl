@@ -82,7 +82,7 @@ handle_request(
     Json = jsx:encode(
         json_rows(
             ets:match_object(
-		Table,
+        Table,
                 normalise_erlang_term(TupleWildCard, <<"tuple">>)),
             []
         )
