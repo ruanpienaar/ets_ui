@@ -44,6 +44,7 @@ init(Req, StateMap) ->
         {tuple_wildcard, [], undefined}
         ], Req
     ),
+    % erlang:display(QueryMap),
     #{ table := TableBinStr } = QueryMap,
     Table = normalise_table_name(TableBinStr),
     case ets:info(Table) of
@@ -110,18 +111,26 @@ handle_request(
 handle_request(
         Req,
         #{
+            key_type := KeyType,
             continuation := Continuation,
             pagesize := PageSize
         },
         #{ table := Table } = StateMap) ->
     #{
         continuation := NextContinuation,
+        key_type := NextKeyType,
         entries := Rows
-     } = get_next_n_objects(Table, Continuation, PageSize),
+     } = case Continuation of
+        undefined ->
+            get_next_n_objects(Table, undefined, PageSize);
+        _ ->
+            get_next_n_objects(Table, normalise_erlang_term(Continuation, KeyType), PageSize)
+    end,
     RowsDisplay =
         json_rows(Rows, []),
     create_reply(200, jsx:encode(#{
         continuation => NextContinuation,
+        key_type => NextKeyType,
         rows => RowsDisplay
     }), Req, StateMap).
 
@@ -144,6 +153,7 @@ get_next_n_objects(Table, undefined, PageSize) when PageSize > 0 ->
 get_next_n_objects(_Table, '$end_of_table' = Key, PageSize) when PageSize > 0 ->
     #{
         continuation => Key,
+        key_type => key_type(Key),
         entries => []
     };
 get_next_n_objects(Table, Continuation, PageSize) when PageSize > 0 ->
@@ -159,6 +169,7 @@ get_next_n_objects(Table, PageCount, Key, [Entry], R) ->
         '$end_of_table' ->
             #{
                 continuation => '$end_of_table',
+                key_type => atom,
                 entries => lists:reverse([Entry|R])
             };
         NextKey ->
@@ -166,6 +177,7 @@ get_next_n_objects(Table, PageCount, Key, [Entry], R) ->
                 0 ->
                     #{
                         continuation => ets:next(Table, Key),% Key, % Should that not be ets:next ?
+                        key_type => key_type(Key),
                         entries => lists:reverse([Entry|R])
                     };
                 NewPageCount ->

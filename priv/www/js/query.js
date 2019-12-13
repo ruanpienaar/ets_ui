@@ -2,66 +2,13 @@ $('document').ready(function(){
     //alert(getUrlParameter('table'));
     var table = getUrlParameter('table');
     $('#tblname').append(table);
-    // var page_load_ets_key = getUrlParameter('key');
-    // if( page_load_ets_key != ''){
-    //     $('#ets_key').val(page_load_ets_key);
-    // }
-    // var page_load_ets_value = getUrlParameter('value');
-    // if( page_load_ets_value != ''){
-    //     $('#ets_value').val(page_load_ets_value);
-    // }
-
-    // var query_type = getUrlParameter('query_type');
-    // if ( query_type != ''){
-    //     //alert(query_type);
-    //     // lookup
-    //     if (query_type == 'lookup') {
-    //         $('#query_type').prop('checked', true);
-    //     } if (query_type == 'match_object'){
-    //         $('#query_type').prop('checked', false);
-    //     }
-    //     // match_object
-    // } else {
-    //     //query_type = "checked"
-    //     $('#query_type').prop('checked', true);
-    // }
-
-    // if( page_load_ets_key != '' || page_load_ets_value != '' ){
-
-    //     var url = window.location.href;
-    //     var Qstring = url.split("?")[1];
-    //      alert(arr[1]);
-
-    //     alert("/api/query?"+Qstring);
-
-    //     // Do the query here as AJAX call
-    //     $.get("/api/query?"+Qstring, function( data ){
-    //         $('#query_results').empty();
-    //         $('#query_results').append(data);
-    //     });
-    // }
-
-
-
-
-    // take the current URL and query...
-
-
     // so on arrival, only table willl be set,
     // so fetch the first X entries, and return the results + conti_key
     do_page_query(table);
-
 });
 
 function do_page_query(table){
-    console.log(table);
-    console.log("/api/query?table="+table);
-    $.get("/api/query?table="+encodeURIComponent(table), function( data ){
-        $('#query_results').empty();
-        var jsonstring = JSON.stringify(data, null, 2);
-        $('#query_results').append(jsonstring);
-        hljs.initHighlighting();
-    });
+    do_query("table="+table, hljs);
 }
 
 function get_results(){
@@ -73,12 +20,7 @@ function get_results(){
             'table='+encodeURIComponent(table)+
             '&key='+encodeURIComponent(ets_key)+
             '&key_type='+encodeURIComponent(key_type);
-        $.get("/api/query?"+query_portion, function( data ){
-            $('#query_results').empty();
-            var jsonstring = JSON.stringify(data, null, 2);
-            $('#query_results').append(jsonstring);
-            hljs.initHighlighting();
-        });
+        do_query(query_portion, hljs);
     }
 }
 
@@ -89,13 +31,39 @@ function tuple_wildcard(){
         var query_portion =
         'table='+encodeURIComponent(table)+
         '&tuple_wildcard='+encodeURIComponent(tuple_value)
-        $.get("/api/query?"+query_portion, function( data ){
-            $('#query_results').empty();
-            var jsonstring = JSON.stringify(data, null, 2);
-            $('#query_results').append(jsonstring);
-            hljs.initHighlighting();
-        });
+        do_query(query_portion, hljs);
     }
+}
+
+function get_next() {
+    var table = getUrlParameter('table');
+    var continuation = $('#continuation').html();
+    var key_data_type = $('#key_data_type').html();
+    if( continuation != '' ){
+        var query_portion =
+        'table='+encodeURIComponent(table)+
+        '&continuation='+encodeURIComponent(continuation)+
+        '&key_type='+encodeURIComponent(key_data_type);
+        do_query(query_portion, hljs);
+    }
+}
+
+function do_query(query_portion, hljs){
+    console.log(query_portion);
+    $.get("/api/query?"+query_portion, function( data ){
+        get_results_and_rehighlight_results(data, hljs);
+    });
+}
+
+function get_results_and_rehighlight_results(data, hljs) {
+    $('#query_results').empty();
+    $('#continuation').empty();
+    $('#key_data_type').empty();
+    var jsonstring = JSON.stringify(data.rows, null, 2);
+    $('#query_results').append(jsonstring);
+    $('#continuation').append(data.continuation);
+    $('#key_data_type').append(data.key_type);
+    hljs.initHighlighting();
 }
 
 $("#lookup").click(function(){
@@ -106,10 +74,18 @@ $("#tuple_wildcard").click(function(){
     tuple_wildcard();
 });
 
-
-$("#page").click(function(){
-    window.location.href = 'page.html?table='+getUrlParameter('table');
+$("#next").click(function(){
+    get_next();
 });
+
+// $("#page").click(function(){
+//     window.location.href = 'page.html?table='+getUrlParameter('table');
+// });
 $("#download").click(function(){
     alert('not implemented yet');
 });
+
+
+
+
+

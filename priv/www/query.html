@@ -14,9 +14,11 @@
     </head>
     <body>
         <div class="container-fluid">
-          <h3><a href="index.html">Tables</a></h3>
-          <div class="row">
+            <h3><a href="index.html">Tables</a></h3>
+            <div class="row">
                 <h4>Table:<span id="tblname"></span></h4>
+            </div>
+            <div class="row">
                 <label class="form-control" for="ets_key">Key:</label>
                 <input class="form-control" style="display: inline;" type="text" id="ets_key"  />
                 <label class="form-control" for="key_type">Key Data Type:</label>
@@ -40,12 +42,23 @@
                 <label for="query_type">Tuple wildcard ( A.K.A ets:match_spec )</label>
                 <input class="form-control" style="display: inline;" type="text" id="tuple_value" />
                 <button type="button" class="form-control" id="tuple_wildcard" >ETS Match Spec</button>
-                <br />
-                <hr />
+            </div>
+            <div class="row">
                 <button class="form-control" id="download" >Download table contents</button>
-              Results:
-              <pre><code class="json" id="query_results"></code></pre>
-          </div>
+            </div>
+            <div style="text-align: center" class="row">
+                <button class="form-control" >Prev</button>
+                <div>Continuation:</div>
+                <div id="continuation"></div>
+                <div>Data type:</div>
+                <div id="key_data_type"></div>
+                <button id="next" class="form-control" >Next</button>
+            </div>
+            <div class="row">
+                <div>
+                    <pre><code class="json" id="query_results"></code></pre>
+                </div>
+            </div>
         </div>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
