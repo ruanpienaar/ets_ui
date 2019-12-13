@@ -44,7 +44,7 @@ init(Req, StateMap) ->
         {tuple_wildcard, [], undefined}
         ], Req
     ),
-    erlang:display(QueryMap),
+    % erlang:display(QueryMap),
     #{ table := TableBinStr } = QueryMap,
     Table = normalise_table_name(TableBinStr),
     case ets:info(Table) of
