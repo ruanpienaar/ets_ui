@@ -64,14 +64,14 @@ init(Req, StateMap) ->
 
 %% ets:match_object, match tuple sent in as `tuple_wildcard`
 %% TODO: do match object with list of entries...!!!!
-%% 
+%%
 %% match_object(Tab, Pattern, Limit) ->
 %%                 {[Object], Continuation} | '$end_of_table'
 %%
 %% match_object(Continuation) ->
 %%                {[Object], Continuation} | '$end_of_table'
 handle_request(
-        Req, 
+        Req,
         #{
             tuple_wildcard := TupleWildCard,
             page := _Page,
@@ -90,11 +90,11 @@ handle_request(
     create_reply(200, Json, Req, StateMap);
 %% ets:lookup on key, key sent in, with key type
 handle_request(
-        Req, 
+        Req,
         #{
             key := Key,
             key_type := KeyType
-        }, 
+        },
         #{ table := Table } = StateMap) when Key /= undefined ->
     NKey = normalise_erlang_term(Key, KeyType),
     Json = jsx:encode(
@@ -108,11 +108,11 @@ handle_request(
 
 %% TODO: Fix page sending in continuation... ( and the erlang term type for continuation )
 handle_request(
-        Req, 
+        Req,
         #{
             continuation := Continuation,
             pagesize := PageSize
-        }, 
+        },
         #{ table := Table } = StateMap) ->
     #{
         continuation := NextContinuation,

@@ -12,17 +12,15 @@
         <link rel="stylesheet" href="highlight/styles/default.css">
         <script src="highlight/highlight.pack.js"></script>
 
-
     </head>
     <body>
         <div class="container-fluid">
           <h3><a href="index.html">Tables</a></h3>
           <div class="row">
-            <div class="col-sm">
-
-                <div><h4>Table:<span id="tblname"></span></h4></div>
-                <div>Key:</div>
+                <h4>Table:<span id="tblname"></span></h4>
+                <label class="form-control" for="ets_key">Key:</label>
                 <input class="form-control" style="display: inline;" type="text" id="ets_key"  />
+                <label class="form-control" for="key_type">Key Data Type:</label>
                 <select class="form-control" id="key_type">
                     <option value="atom">atom</option>
                     <option value="binary">binary</option>
@@ -39,22 +37,15 @@
                     <option value="reference">reference</option>
                     <option value="tuple">tuple</option>
                 </select>
-                <button type="button" class="form-control" id="lookup" >Lookup</button>
-
+                <button type="button" class="form-control" id="lookup" >ETS Lookup</button>
                 <label for="query_type">Tuple wildcard ( A.K.A ets:match_spec )</label>
                 <input class="form-control" style="display: inline;" type="text" id="tuple_value" />
-                <button type="button" class="form-control" id="tuple_wildcard" >Match Spec</button>
-
+                <button type="button" class="form-control" id="tuple_wildcard" >ETS Match Spec</button>
                 <br />
                 <hr />
-                <button class="form-control" id="page" >Page through table</button>
-                <br />
                 <button class="form-control" id="download" >Download table contents</button>
-            </div>
-            <div class="col-sm">
               Results:
               <pre><code class="json" id="query_results"></code></pre>
-            </div>
           </div>
         </div>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
