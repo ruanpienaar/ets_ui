@@ -129,7 +129,7 @@ handle_request(
     RowsDisplay =
         json_rows(Rows, []),
     create_reply(200, jsx:encode(#{
-        continuation => NextContinuation,
+        continuation => json_sanitize_key(NextContinuation),
         key_type => NextKeyType,
         rows => RowsDisplay
     }), Req, StateMap).
