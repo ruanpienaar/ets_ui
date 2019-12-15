@@ -44,7 +44,7 @@ init(Req, StateMap) ->
         {tuple_wildcard, [], undefined}
         ], Req
     ),
-    % erlang:display(QueryMap),
+    erlang:display(QueryMap),
     #{ table := TableBinStr } = QueryMap,
     Table = normalise_table_name(TableBinStr),
     case ets:info(Table) of
@@ -75,18 +75,33 @@ handle_request(
         Req,
         #{
             tuple_wildcard := TupleWildCard,
-            page := _Page,
-            pagesize := _PageSize
+            continuation := Continuation, %% This will be ETS continuation
+            pagesize := PageSize
         },
         #{ table := Table } = StateMap)
         when TupleWildCard /= undefined ->
-    Json = jsx:encode(
-        json_rows(
+    io:format("~p", [normalise_erlang_term(TupleWildCard, <<"tuple">>)]),
+    {Objects, NextContinuation} = case Continuation of 
+        undefined ->      
             ets:match_object(
-        Table,
-                normalise_erlang_term(TupleWildCard, <<"tuple">>)),
-            []
-        )
+                Table,
+                normalise_erlang_term(TupleWildCard, <<"tuple">>),
+                PageSize
+           );
+       _ ->
+           ets:match_object(Continuation)
+    end,
+       
+    Rows =
+        (json_rows(
+            Objects
+        ))#{ 
+            continuation => term_to_bin_string(NextContinuation),
+            key_type => <<"tuple">>
+        },
+    %io:format("~p\n", [Rows]),
+    Json = jsx:encode(
+        Rows
     ),
     create_reply(200, Json, Req, StateMap);
 %% ets:lookup on key, key sent in, with key type
@@ -100,8 +115,7 @@ handle_request(
     NKey = normalise_erlang_term(Key, KeyType),
     Json = jsx:encode(
         json_rows(
-            ets:lookup(Table, NKey),
-            []
+            ets:lookup(Table, NKey)
         )
     ),
     create_reply(200, Json, Req, StateMap);
@@ -112,7 +126,7 @@ handle_request(
         Req,
         #{
             key_type := KeyType,
-            continuation := Continuation,
+            continuation := Continuation, %% This will be the next key ( NOT! to be confused with ets continuation )
             pagesize := PageSize
         },
         #{ table := Table } = StateMap) ->
@@ -127,24 +141,30 @@ handle_request(
             get_next_n_objects(Table, normalise_erlang_term(Continuation, KeyType), PageSize)
     end,
     RowsDisplay =
-        json_rows(Rows, []),
+        json_rows(Rows),
     create_reply(200, jsx:encode(#{
         continuation => json_sanitize_key(NextContinuation),
         key_type => NextKeyType,
         rows => RowsDisplay
     }), Req, StateMap).
 
-json_rows([], R) ->
-    R;
-json_rows([Entry|T], R) ->
-    Key = element(1, Entry),
+json_rows(Entries) ->
+    json_rows(Entries, [], '$end_of_table').
+
+json_rows([], R, LastKey) ->
+    #{
+        continuation => LastKey,
+        rows => R
+    };
+json_rows([Entry|T], R, _LastKey) ->
+    Key = element(1, Entry), %% TODO: use table key_pos to know where the key is !!!
     FormattedValues = format_values(Entry, size(Entry)),
     RowMap = #{
         key => json_sanitize_key(Key),
         key_type => key_type(Key),
         values => FormattedValues
     },
-    json_rows(T, [RowMap|R]).
+    json_rows(T, [RowMap|R], Key).
 
 %% @doc Here we deal with the key first to get to the staring point.
 %% @end
