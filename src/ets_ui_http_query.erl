@@ -2,9 +2,6 @@
 
 -behaviour(cowboy_handler).
 
--define(DEFAULT_PAGESIZE, 20).
--define(DEFAULT_PAGE, 0).
-
 -include("ets_ui.hrl").
 
 -export([
@@ -13,7 +10,8 @@
 
 -ifdef(TEST).
 -export([
-    get_next_n_objects/3
+    get_next_n_objects/3,
+    handle_request/2
 ]).
 -endif.
 
@@ -31,138 +29,152 @@ init(Req, StateMap) ->
     %             {ok, NormTable}
     %     end
     % end,
-    QueryMap = cowboy_req:match_qs([
-        {table, nonempty },% [TableChecker]},
-        {key, [], undefined},
-        {key_type, [], undefined},
-        {value, [], undefined},
-        % {page, int, ?DEFAULT_PAGE},
-        {continuation, [], undefined},
-        {pagesize, int, ?DEFAULT_PAGESIZE},
-        {tuple_wildcard, [], undefined}
-        ], Req
-    ),
+    QueryMap = parse_qs(Req),
     erlang:display(QueryMap),
     #{ table := TableBinStr } = QueryMap,
     Table = normalise_table_name(TableBinStr),
     case ets:info(Table) of
         undefined ->
             ets_ui_common:create_reply(400, <<"">>, Req, StateMap);
-        _ ->
-        % case #{ table := {error, {table, undefined}} } = QueryMap of
-        %     false ->
-                handle_request(
-                    Req,
-                    QueryMap,
-                    StateMap#{ table => Table }
-                )
-        %     true ->
-        %         ets_ui_common:create_reply(400, <<"">>, Req, StateMap)
-        % end.
+        TableInfo ->
+            {ResponseCode, Json} =
+            handle_request(
+                QueryMap,
+                StateMap#{
+                    table => Table,
+                    table_info => TableInfo
+                }
+            ),
+            ets_ui_common:create_reply(ResponseCode, Json, Req, StateMap)
     end.
 
-%% ets:match_object, match tuple sent in as `tuple_wildcard`
-%% TODO: do match object with list of entries...!!!!
-%%
-%% match_object(Tab, Pattern, Limit) ->
-%%                 {[Object], Continuation} | '$end_of_table'
-%%
-%% match_object(Continuation) ->
-%%                {[Object], Continuation} | '$end_of_table'
+parse_qs(Req) ->
+    QueryMap = cowboy_req:match_qs(
+        [
+            {table, nonempty },% [TableChecker]},
+            {key, [], undefined},
+            {key_type, [], undefined},
+            {value, [], undefined},
+            {continuation, [], undefined},
+            {pagesize, int, ?DEFAULT_PAGESIZE},
+            {tuple_wildcard, [], undefined}
+        ],
+        Req
+    ),
+    QueryMap.
+
+%% Match object
 handle_request(
-        Req,
         #{
             tuple_wildcard := TupleWildCard,
             continuation := Continuation, %% This will be ETS continuation
             pagesize := PageSize
         },
-        #{ table := Table } = StateMap)
+        #{
+            table := Table,
+            table_info := TableInfo
+        } = _StateMap)
         when TupleWildCard /= undefined ->
-    io:format("~p", [ets_ui_common:normalise_erlang_term(TupleWildCard, <<"tuple">>)]),
     {Objects, NextContinuation} = case Continuation of
-        undefined ->
+        undefined when PageSize =/= undefined ->
+            case
+                ets:match_object(
+                    Table,
+                    ets_ui_common:normalise_erlang_term(
+                        TupleWildCard,
+                        erl_string
+                    ),
+                    PageSize
+                )
+            of
+                '$end_of_table' ->
+                    {[], '$end_of_table'};
+                R ->
+                    R
+            end;
+        _ when Continuation /= undefined ->
+            %% TODO: the below can most likely also return end_of_table ...
             ets:match_object(
-                Table,
-                ets_ui_common:normalise_erlang_term(TupleWildCard, <<"tuple">>),
-                PageSize
-           );
-       _ ->
-           ets:match_object(Continuation)
+                ets_ui_common:normalise_erlang_term(
+                    Continuation,
+                    ets_continuation
+                )
+            )
     end,
-
+    {keypos, KeyPos} = proplists:lookup(keypos, TableInfo),
     Rows =
         (json_rows(
+            KeyPos,
             Objects
         ))#{
-            continuation => ets_ui_common:term_to_bin_string(NextContinuation),
-            key_type => <<"tuple">>
+            continuation => ets_ui_common:json_sanitize({ets_continuation, NextContinuation}),
+            key_type => data_type(NextContinuation)
         },
-    %io:format("~p\n", [Rows]),
-    Json = jsx:encode(
-        Rows
-    ),
-    ets_ui_common:create_reply(200, Json, Req, StateMap);
-%% ets:lookup on key, key sent in, with key type
+    Json = jsx:encode(Rows),
+    {200, Json};
+%% Lookup
 handle_request(
-        Req,
         #{
             key := Key,
             key_type := KeyType
         },
-        #{ table := Table } = StateMap) when Key /= undefined ->
+        #{
+            table := Table,
+            table_info := TableInfo
+        } = _StateMap) when Key /= undefined ->
     NKey = ets_ui_common:normalise_erlang_term(Key, KeyType),
+    {keypos, KeyPos} = proplists:lookup(keypos, TableInfo),
     Json = jsx:encode(
         json_rows(
+            KeyPos,
             ets:lookup(Table, NKey)
         )
     ),
-    ets_ui_common:create_reply(200, Json, Req, StateMap);
-%% listing table entries per page and pagesize
-
+    {200, Json};
+%% Page through table
 %% TODO: Fix page sending in continuation... ( and the erlang term type for continuation )
 handle_request(
-        Req,
         #{
             key_type := KeyType,
             continuation := Continuation, %% This will be the next key ( NOT! to be confused with ets continuation )
             pagesize := PageSize
         },
-        #{ table := Table } = StateMap) ->
+        #{
+            table := Table,
+            table_info := TableInfo
+        } = _StateMap) ->
     #{
         continuation := NextContinuation,
         key_type := NextKeyType,
-        entries := Rows
+        entries := Entries
      } = case Continuation of
         undefined ->
             get_next_n_objects(Table, undefined, PageSize);
         _ ->
             get_next_n_objects(Table, ets_ui_common:normalise_erlang_term(Continuation, KeyType), PageSize)
     end,
-    RowsDisplay =
-        json_rows(Rows),
-    ets_ui_common:create_reply(200, jsx:encode(#{
-        continuation => ets_ui_common:json_sanitize(NextContinuation),
-        key_type => NextKeyType,
-        rows => RowsDisplay
-    }), Req, StateMap).
+    {keypos, KeyPos} = proplists:lookup(keypos, TableInfo),
+    RowsDisplay = json_rows(KeyPos, Entries),
+    Json = jsx:encode(RowsDisplay#{
+        continuation => NextContinuation,
+        key_type => NextKeyType
+    }),
+    {200, Json}.
 
-json_rows(Entries) ->
-    json_rows(Entries, [], '$end_of_table').
+json_rows(KeyPos, Entries) ->
+    json_rows(KeyPos, Entries, []).
 
-json_rows([], R, LastKey) ->
-    #{
-        continuation => LastKey,
-        rows => R
-    };
-json_rows([Entry|T], R, _LastKey) ->
-    Key = element(1, Entry), %% TODO: use table key_pos to know where the key is !!!
+json_rows(_KeyPos, [], R) ->
+    #{ rows => R };
+json_rows(KeyPos, [Entry|T], R) ->
+    Key = element(KeyPos, Entry), %% TODO: use table key_pos to know where the key is !!!
     FormattedValues = format_values(Entry, size(Entry)),
     RowMap = #{
         key => ets_ui_common:json_sanitize(Key),
-        key_type => key_type(Key),
+        key_type => data_type(Key),
         values => FormattedValues
     },
-    json_rows(T, [RowMap|R], Key).
+    json_rows(KeyPos, T, [RowMap|R]).
 
 %% @doc Here we deal with the key first to get to the staring point.
 %% @end
@@ -171,7 +183,7 @@ get_next_n_objects(Table, undefined, PageSize) when PageSize > 0 ->
 get_next_n_objects(_Table, '$end_of_table' = Key, PageSize) when PageSize > 0 ->
     #{
         continuation => Key,
-        key_type => key_type(Key),
+        key_type => data_type(Key),
         entries => []
     };
 get_next_n_objects(Table, Continuation, PageSize) when PageSize > 0 ->
@@ -195,20 +207,13 @@ get_next_n_objects(Table, PageCount, Key, [Entry], R) ->
                 0 ->
                     #{
                         continuation => ets:next(Table, Key),% Key, % Should that not be ets:next ?
-                        key_type => key_type(Key),
+                        key_type => data_type(Key),
                         entries => lists:reverse([Entry|R])
                     };
                 NewPageCount ->
                     get_next_n_objects(Table, NewPageCount, NextKey, ets:lookup(Table, NextKey), [Entry|R])
             end
     end.
-
-% get_next_n_objects(_Table, 0, Key, Acc) ->
-%     #{ continuation => Key, entries => lists:reverse(Acc) };
-% get_next_n_objects(_Table, _PageSize, '$end_of_table', Acc) ->
-%     #{ continuation => '$end_of_table', entries => lists:reverse(Acc) };
-% get_next_n_objects(Table, PageSize, NextKey, Acc) ->
-%     get_next_n_objects(Table, PageSize-1, ets:next(Table, NextKey), [ets:lookup(Table, NextKey)|Acc]).
 
 normalise_table_name(Table) ->
     try
@@ -237,39 +242,39 @@ is_table_ref(Table) ->
 format_values(Entry, Size) ->
     format_values(Entry, Size, []).
 
-format_values(_Entry, 1, R) ->
+format_values(_Entry, 0, R) ->
     % lists:reverse(R);
     R;
-format_values(Entry, Size, R) when Size > 1 ->
+format_values(Entry, Size, R) when Size > 0 ->
     Val = element(Size, Entry),
     FormVal = ets_ui_common:term_to_bin_string(Val),
     format_values(Entry, Size - 1, [ {Size, FormVal} | R ]).
 
-key_type(Key) when is_atom(Key) ->
+data_type(Key) when is_atom(Key) ->
     atom;
-key_type(Key) when is_binary(Key) ->
+data_type(Key) when is_binary(Key) ->
     binary;
-key_type(Key) when is_bitstring(Key) ->
+data_type(Key) when is_bitstring(Key) ->
     bitstring;
-key_type(Key) when is_boolean(Key) ->
+data_type(Key) when is_boolean(Key) ->
     boolean;
-key_type(Key) when is_float(Key) ->
+data_type(Key) when is_float(Key) ->
     float;
-key_type(Key) when is_function(Key) ->
+data_type(Key) when is_function(Key) ->
     function;
-key_type(Key) when is_integer(Key) ->
+data_type(Key) when is_integer(Key) ->
     integer;
-key_type(Key) when is_list(Key) ->
+data_type(Key) when is_list(Key) ->
     list;
-key_type(Key) when is_map(Key) ->
+data_type(Key) when is_map(Key) ->
     map;
-key_type(Key) when is_number(Key) ->
+data_type(Key) when is_number(Key) ->
     number;
-key_type(Key) when is_pid(Key) ->
+data_type(Key) when is_pid(Key) ->
     pid;
-key_type(Key) when is_port(Key) ->
+data_type(Key) when is_port(Key) ->
     port;
-key_type(Key) when is_reference(Key) ->
+data_type(Key) when is_reference(Key) ->
     reference;
-key_type(Key) when is_tuple(Key) ->
+data_type(Key) when is_tuple(Key) ->
     tuple.
