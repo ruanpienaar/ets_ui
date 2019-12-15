@@ -13,9 +13,7 @@
 
 -ifdef(TEST).
 -export([
-    get_next_n_objects/3,
-    create_reply/4,
-    create_reply/5
+    get_next_n_objects/3
 ]).
 -endif.
 
@@ -49,7 +47,7 @@ init(Req, StateMap) ->
     Table = normalise_table_name(TableBinStr),
     case ets:info(Table) of
         undefined ->
-            create_reply(400, <<"">>, Req, StateMap);
+            ets_ui_common:create_reply(400, <<"">>, Req, StateMap);
         _ ->
         % case #{ table := {error, {table, undefined}} } = QueryMap of
         %     false ->
@@ -59,7 +57,7 @@ init(Req, StateMap) ->
                     StateMap#{ table => Table }
                 )
         %     true ->
-        %         create_reply(400, <<"">>, Req, StateMap)
+        %         ets_ui_common:create_reply(400, <<"">>, Req, StateMap)
         % end.
     end.
 
@@ -80,30 +78,30 @@ handle_request(
         },
         #{ table := Table } = StateMap)
         when TupleWildCard /= undefined ->
-    io:format("~p", [normalise_erlang_term(TupleWildCard, <<"tuple">>)]),
-    {Objects, NextContinuation} = case Continuation of 
-        undefined ->      
+    io:format("~p", [ets_ui_common:normalise_erlang_term(TupleWildCard, <<"tuple">>)]),
+    {Objects, NextContinuation} = case Continuation of
+        undefined ->
             ets:match_object(
                 Table,
-                normalise_erlang_term(TupleWildCard, <<"tuple">>),
+                ets_ui_common:normalise_erlang_term(TupleWildCard, <<"tuple">>),
                 PageSize
            );
        _ ->
            ets:match_object(Continuation)
     end,
-       
+
     Rows =
         (json_rows(
             Objects
-        ))#{ 
-            continuation => term_to_bin_string(NextContinuation),
+        ))#{
+            continuation => ets_ui_common:term_to_bin_string(NextContinuation),
             key_type => <<"tuple">>
         },
     %io:format("~p\n", [Rows]),
     Json = jsx:encode(
         Rows
     ),
-    create_reply(200, Json, Req, StateMap);
+    ets_ui_common:create_reply(200, Json, Req, StateMap);
 %% ets:lookup on key, key sent in, with key type
 handle_request(
         Req,
@@ -112,13 +110,13 @@ handle_request(
             key_type := KeyType
         },
         #{ table := Table } = StateMap) when Key /= undefined ->
-    NKey = normalise_erlang_term(Key, KeyType),
+    NKey = ets_ui_common:normalise_erlang_term(Key, KeyType),
     Json = jsx:encode(
         json_rows(
             ets:lookup(Table, NKey)
         )
     ),
-    create_reply(200, Json, Req, StateMap);
+    ets_ui_common:create_reply(200, Json, Req, StateMap);
 %% listing table entries per page and pagesize
 
 %% TODO: Fix page sending in continuation... ( and the erlang term type for continuation )
@@ -138,12 +136,12 @@ handle_request(
         undefined ->
             get_next_n_objects(Table, undefined, PageSize);
         _ ->
-            get_next_n_objects(Table, normalise_erlang_term(Continuation, KeyType), PageSize)
+            get_next_n_objects(Table, ets_ui_common:normalise_erlang_term(Continuation, KeyType), PageSize)
     end,
     RowsDisplay =
         json_rows(Rows),
-    create_reply(200, jsx:encode(#{
-        continuation => json_sanitize_key(NextContinuation),
+    ets_ui_common:create_reply(200, jsx:encode(#{
+        continuation => ets_ui_common:json_sanitize(NextContinuation),
         key_type => NextKeyType,
         rows => RowsDisplay
     }), Req, StateMap).
@@ -160,7 +158,7 @@ json_rows([Entry|T], R, _LastKey) ->
     Key = element(1, Entry), %% TODO: use table key_pos to know where the key is !!!
     FormattedValues = format_values(Entry, size(Entry)),
     RowMap = #{
-        key => json_sanitize_key(Key),
+        key => ets_ui_common:json_sanitize(Key),
         key_type => key_type(Key),
         values => FormattedValues
     },
@@ -212,32 +210,6 @@ get_next_n_objects(Table, PageCount, Key, [Entry], R) ->
 % get_next_n_objects(Table, PageSize, NextKey, Acc) ->
 %     get_next_n_objects(Table, PageSize-1, ets:next(Table, NextKey), [ets:lookup(Table, NextKey)|Acc]).
 
-create_reply(StatusCode, ResponseValue, Req, StateMap) ->
-    create_reply(StatusCode, ?DEFAULT_RESP_HEAD, ResponseValue, Req, StateMap).
-
-create_reply(StatusCode, ResponseHeaders, ResponseValue, Req, StateMap) ->
-    {ok, cowboy_req:reply(
-        StatusCode,
-        ResponseHeaders,
-        ResponseValue,
-        Req
-    ), StateMap}.
-
-json_sanitize_key(Key) when is_tuple(Key) ->
-    term_to_bin_string(Key);
-json_sanitize_key(Key) when is_list(Key) ->
-    Key;
-json_sanitize_key(Key) when is_atom(Key) ->
-    Key;
-json_sanitize_key(Key) when is_integer(Key) ->
-    Key;
-json_sanitize_key(Key) ->
-    logger:info("Handing any format key ~p", [Key]),
-    Key.
-
-term_to_bin_string(Term) ->
-    unicode:characters_to_binary(io_lib:format("~100000p", [Term])).
-
 normalise_table_name(Table) ->
     try
         TableName =
@@ -262,27 +234,6 @@ is_table_ref(Table) ->
             true
     end.
 
-normalise_erlang_term(Key, <<"atom">>) ->
-    list_to_atom(binary_to_list(Key));
-normalise_erlang_term(Key, <<"binary_string">>) ->
-    Key;
-normalise_erlang_term(Key, <<"integer">>) ->
-    list_to_integer(binary_to_list(Key));
-normalise_erlang_term(Key, <<"tuple">>) ->
-    case erl_scan:string(binary_to_list(Key) ++ ".") of
-        {ok, Tokens, _EndLocation} ->
-            case erl_parse:parse_exprs(Tokens) of
-                {ok, ExprList} ->
-                    %% NB!
-                    %% We're only expecting one ERL expression as a key!!!
-                    erl_parse:normalise( hd(ExprList) );
-                {error, ErrorInfo} ->
-                    {erl_parse_error, {error, ErrorInfo}}
-            end;
-        {error, ErrorInfo, ErrorLocation} ->
-            {error, ErrorInfo, ErrorLocation}
-    end.
-
 format_values(Entry, Size) ->
     format_values(Entry, Size, []).
 
@@ -291,7 +242,7 @@ format_values(_Entry, 1, R) ->
     R;
 format_values(Entry, Size, R) when Size > 1 ->
     Val = element(Size, Entry),
-    FormVal = term_to_bin_string(Val),
+    FormVal = ets_ui_common:term_to_bin_string(Val),
     format_values(Entry, Size - 1, [ {Size, FormVal} | R ]).
 
 key_type(Key) when is_atom(Key) ->

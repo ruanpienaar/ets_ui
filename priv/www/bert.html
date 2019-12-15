@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ETS UI</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.0/css/bootstrap.min.css" integrity="sha384-PDle/QlgIONtM1aqA2Qemk5gPOE7wFq8+Em+G/hmo5Iq0CCmYZLv3fVRDJ4MMwEA" crossorigin="anonymous">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="icon" href="images/favicon.png">
+</head>
+<body>
+    <div class="container-fluid">
+        <h1><a href="http://bert-rpc.org/">BERT (Binary ERlang Term)</a></h1>
+
+        <div class="row">
+            <button id="get_back_end_time" type="button" class="btn btn-primary">Get back-end time</button>
+        </div>
+        <!-- <div id="raw_bert">
+        </div> -->
+        <textarea rows="20" cols="110" id="raw_bert"></textarea>
+        <div id="back_end_time">
+        </div>
+
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.0/js/bootstrap.min.js" integrity="sha384-7aThvCh9TypR7fIc2HV4O/nFMVCBwyIUKL8XCtKE+8xgCgl/PQGuFsvShjr74PBp" crossorigin="anonymous"></script>
+    <script src="js/common.js"></script>
+
+    <script type="text/javascript" src="chai.js"></script>
+    <script type="text/javascript" src="BERT-JS/bert.js"></script>
+
+    <script type="text/javascript">
+
+        $('document').ready(function(){
+            Bert = new BertClass();
+
+            // var S = Bert.bytes_to_string([131,104,2,104,3,98,0,0,7,227,97,12,97,15,104,3,97,12,97,16,97,2]);
+            // var Obj = Bert.decode(S);
+
+            // alert(Obj);
+
+            $('#get_back_end_time').click(function(){
+                $.get("/api/time", function(data){
+                    var bertTerm =
+                        Bert.decode(
+                            Bert.bytes_to_string(data)
+                        );
+                    var bertTermpp =
+                        Bert.pp_bytes(
+                            Bert.bytes_to_string(data)
+                        )
+                    console.log(data);
+                    console.log(bertTerm);
+                    console.log(bertTermpp);
+                    $('#raw_bert').empty();
+
+                    // for (var i = bertTerm.length - 1; i >= 0; i--) {
+                    //     // alert( bertTerm[i] );
+                    //     $('#raw_bert').append(
+
+                    //     );
+                    // }
+
+                    $('#raw_bert').append(
+                        JSON.stringify(bertTerm, null, 2)
+                    );
+
+                    // $('#raw_bert').append(
+
+                    // );
+                    // alert(Bert.decode(data));
+                })
+            })
+      });
+
+    </script>
+</body>
+</html>

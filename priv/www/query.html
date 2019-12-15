@@ -10,16 +10,20 @@
         <link rel="icon" href="images/favicon.png">
         <link rel="stylesheet" href="highlight/styles/default.css">
         <script src="highlight/highlight.pack.js"></script>
-
     </head>
     <body><form>
         <div class="container-fluid">
-            <h3><a href="index.html">Tables</a></h3>
             <div class="row">
-                <h4>Table:<span id="tblname"></span></h4>
+                <h3><a href="index.html">Tables</a></h3>
             </div>
             <div class="row">
-                <label class="form-control" for="ets_key">Key:</label>
+                <hr />
+            </div>
+            <div class="row">
+                <h2><span id="tblname"></span><h2>
+            </div>
+            <div class="row">
+                <label for="ets_key"><h5>Ets Key Lookup</h5></label>
                 <input class="form-control" style="display: inline;" type="text" id="ets_key"  />
                 <label class="form-control" for="key_type">Key Data Type:</label>
                 <select class="form-control" id="key_type">
@@ -38,14 +42,19 @@
                     <option value="reference">reference</option>
                     <option value="tuple">tuple</option>
                 </select>
-                <button type="button" class="form-control" id="lookup" >ETS Lookup</button>
-                <label for="query_type">Tuple wildcard ( A.K.A ets:match_spec )</label>
-                <input class="form-control" style="display: inline;" type="text" id="tuple_value" />
-                <button type="button" class="form-control" id="tuple_wildcard" >ETS Match Spec</button>
+                <button class="btn btn-primary" id="lookup" >ETS Lookup</button>
             </div>
             <div class="row">
-                <button class="form-control" id="download" >Download table contents</button>
+                <hr />
             </div>
+            <div class="row">
+                <label for="query_type"><h5>Ets Match spec</h5></label>
+                <input class="form-control" style="display: inline;" type="text" id="tuple_value" />
+                <button class="btn btn-primary" id="tuple_wildcard" >ETS Match Spec</button>
+            </div>
+            <!-- <div class="row">
+                <button class="btn btn-primary" id="download" >Download table contents</button>
+            </div> -->
             <div style="text-align: center" class="row">
                 <button class="form-control" >Prev</button>
                 <div>Continuation:</div>
