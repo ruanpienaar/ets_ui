@@ -3,19 +3,19 @@
 compile: rebar3 get-deps
 	@./rebar3 compile
 
-get-deps:
+get-deps: rebar3
 	@./rebar3 get-deps
 
-test:
+test: rebar3
 	@./rebar3 eunit ct
 
-clean:
+clean: rebar3
 	@./rebar3 clean
 
-dialyzer: compile
+dialyzer: compile rebar3
 	@./rebar3 dialyzer
 
-shell: compile
+shell: compile rebar3
 	@./rebar3 shell
 
 rebar3:

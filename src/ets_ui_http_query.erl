@@ -30,7 +30,7 @@ init(Req, StateMap) ->
     %     end
     % end,
     QueryMap = parse_qs(Req),
-    erlang:display(QueryMap),
+    % erlang:display(QueryMap),
     #{ table := TableBinStr } = QueryMap,
     Table = normalise_table_name(TableBinStr),
     case ets:info(Table) of
@@ -143,23 +143,34 @@ handle_request(
             table := Table,
             table_info := TableInfo
         } = _StateMap) ->
-    #{
-        continuation := NextContinuation,
-        key_type := NextKeyType,
-        entries := Entries
-     } = case Continuation of
-        undefined ->
-            get_next_n_objects(Table, undefined, PageSize);
-        _ ->
-            get_next_n_objects(Table, ets_ui_common:normalise_erlang_term(Continuation, KeyType), PageSize)
-    end,
-    {keypos, KeyPos} = proplists:lookup(keypos, TableInfo),
-    RowsDisplay = json_rows(KeyPos, Entries),
-    Json = jsx:encode(RowsDisplay#{
-        continuation => NextContinuation,
-        key_type => NextKeyType
-    }),
-    {200, Json}.
+
+    case
+        (Continuation == undefined andalso KeyType == undefined)
+        orelse
+        (Continuation /= undefined andalso KeyType /= undefined)
+
+    of
+        false ->
+            {400, <<"">>};
+        true ->
+            #{
+                continuation := NextContinuation,
+                key_type := NextKeyType,
+                entries := Entries
+             } = case Continuation of
+                undefined ->
+                    get_next_n_objects(Table, undefined, PageSize);
+                _ ->
+                    get_next_n_objects(Table, ets_ui_common:normalise_erlang_term(Continuation, KeyType), PageSize)
+            end,
+            {keypos, KeyPos} = proplists:lookup(keypos, TableInfo),
+            RowsDisplay = json_rows(KeyPos, Entries),
+            Json = jsx:encode(RowsDisplay#{
+                continuation => NextContinuation,
+                key_type => NextKeyType
+            }),
+            {200, Json}
+    end.
 
 json_rows(KeyPos, Entries) ->
     json_rows(KeyPos, Entries, []).

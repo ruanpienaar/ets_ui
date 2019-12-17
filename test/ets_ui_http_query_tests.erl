@@ -1,5 +1,7 @@
 -module(ets_ui_http_query_tests).
 
+% -define(NODEBUG, true).
+
 -include_lib("eunit/include/eunit.hrl").
 -include("ets_ui.hrl").
 
@@ -475,36 +477,42 @@ handle_request_match_object() ->
     %% Continuation == From Prev Test ( from 21 onwards ... )
     %% KeyType == undefined
     %% table has many entries
-    {<<"continuation">>, NextContinuation1} =
+    {<<"continuation">>, _NextContinuation1} =
         proplists:lookup(<<"continuation">>, jsx:decode(Json3)),
 
-    {_, XXXCont} =
-        ets:match_object(
-            test_table_1,
-            '_',
-            20
-        ),
 
-    ?debugFmt("XXXCont ~p\n", [XXXCont]),
 
-    JsonSaneCont = jsx:encode(
-        ets_ui_common:json_sanitize({ets_continuation, XXXCont})
-    ),
-    ?debugFmt("JsonSaneCont ~p\n", [JsonSaneCont]),
+    %% !!! THIS IS BRITTLE FIX
 
-    TermCont =
-        ets_ui_common:normalise_erlang_term(
-            jsx:decode(JsonSaneCont),
-            ets_continuation
-        ),
-    ?debugFmt("TermCont ~p\n", [TermCont]),
 
-    % It seems the SETTING of the Continuation takes some time in the background....
-    try_x_times(200, fun() ->
-        ets:match_object(
-            TermCont
-        )
-    end),
+
+    % {_, XXXCont} =
+    %     ets:match_object(
+    %         test_table_1,
+    %         '_',
+    %         20
+    %     ),
+
+    % ?debugFmt("XXXCont ~p\n", [XXXCont]),
+
+    % JsonSaneCont = jsx:encode(
+    %     ets_ui_common:json_sanitize({ets_continuation, XXXCont})
+    % ),
+    % ?debugFmt("JsonSaneCont ~p\n", [JsonSaneCont]),
+
+    % TermCont =
+    %     ets_ui_common:normalise_erlang_term(
+    %         jsx:decode(JsonSaneCont),
+    %         ets_continuation
+    %     ),
+    % ?debugFmt("TermCont ~p\n", [TermCont]),
+
+    % % It seems the SETTING of the Continuation takes some time in the background....
+    % try_x_times(200, fun() ->
+    %     ets:match_object(
+    %         TermCont
+    %     )
+    % end),
 
     % ?debugFmt("NextContinuation1 ~p\n", [NextContinuation1]),
 
@@ -537,39 +545,19 @@ handle_request_match_object() ->
     %          {<<"values">>,[{<<"1">>,<<"1">>},{<<"2">>,<<"a">>}]}]]}],
     %     jsx:decode(Json4)
     % ),
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ok.
 
-try_x_times(X, _) when X =< 0 ->
-    ?debugFmt("~p\n", [ets:info(test_table_1)]),
-    throw({failed});
-try_x_times(X, F) when X > 0 ->
-    try
-        F()
-    catch
-        C:E:_ ->
-            timer:sleep(5),
-            try_x_times(X-1, F)
-    end.
+% try_x_times(X, _) when X =< 0 ->
+%     ?debugFmt("~p\n", [ets:info(test_table_1)]),
+%     throw({failed});
+% try_x_times(X, F) when X > 0 ->
+%     try
+%         F()
+%     catch
+%         C:E:_ ->
+%             timer:sleep(5),
+%             try_x_times(X-1, F)
+%     end.
 
 handle_request_lookup() ->
     ok.
@@ -1089,247 +1077,250 @@ handle_request_page_through_table() ->
         jsx:decode(Json7)
     ).
 
-% http_unit_test_() ->
-%     {setup,
-%      fun() ->
-%         ets:new(test_table_1, [public, named_table, ordered_set]),
-%         {ok, Apps} = application:ensure_all_started(cowboy),
-%         {ok, Apps2} = application:ensure_all_started(holster),
-%         ok = application:load(ets_ui),
-%         ok = application:set_env(ets_ui, http_port, 0),
-%         {ok, Pid} = ets_ui_http:start_link(),
-%         {{ok, Pid}, lists:reverse(Apps) ++ lists:reverse(Apps2)}
-%      end,
-%      fun({{ok, Pid}, Apps}) ->
-%         true = erlang:unlink(Pid),
-%         [ ok = application:stop(App) || App <- Apps ],
-%         true = erlang:exit(Pid, kill)
-%      end,
-%      [
-%         {foreachx,
-%          fun(_TestString) ->
-%             {ok, Port} = application:get_env(ets_ui, assigned_port),
-%             Port
-%          end,
-%          fun(_TestString, AssignedPort) ->
-%             ets:delete_all_objects(test_table_1)
-%          end,
-%          [
-%             {"api page entries ( no results )",
-%                 fun api_page_entries_no_results/2},
-%             {"api page entries ( one result )",
-%                 fun api_page_entries_one_result/2},
-%             {"api page entries ( lots of results )",
-%                 fun api_page_entries_lots_results/2},
-%             {"api page entries ( continuation )",
-%                 fun api_page_entries_with_continuation/2}
-%          ]
-%         }
-%      ]
-%     }.
+http_unit_test_() ->
+    {setup,
+     fun() ->
+        ets:new(test_table_1, [public, named_table, ordered_set]),
+        {ok, Apps} = application:ensure_all_started(cowboy),
+        {ok, Apps2} = application:ensure_all_started(holster),
+        ok = application:load(ets_ui),
+        ok = application:set_env(ets_ui, http_port, 0),
+        {ok, Pid} = ets_ui_http:start_link(),
+        {{ok, Pid}, lists:reverse(Apps) ++ lists:reverse(Apps2)}
+     end,
+     fun({{ok, Pid}, Apps}) ->
+        true = erlang:unlink(Pid),
+        [ ok = application:stop(App) || App <- Apps ],
+        true = erlang:exit(Pid, kill)
+     end,
+     [
+        {foreachx,
+         fun(_TestString) ->
+            {ok, Port} = application:get_env(ets_ui, assigned_port),
+            Port
+         end,
+         fun(_TestString, _AssignedPort) ->
+            ets:delete_all_objects(test_table_1)
+         end,
+         [
+            {"api page entries ( no results )",
+                fun api_page_entries_no_results/2},
+            {"api page entries ( one result )",
+                fun api_page_entries_one_result/2},
+            {"api page entries ( lots of results )",
+                fun api_page_entries_lots_results/2},
+            {"api page entries ( continuation )",
+                fun api_page_entries_with_continuation/2}
+         ]
+        }
+     ]
+    }.
 
-% api_page_entries_no_results(_TestString, AssignedPort) ->
+api_page_entries_no_results(_TestString, AssignedPort) ->
 
-%     %% TODO: use the eunit ifdef macro to enable/disable logging
+    %% TODO: use the eunit ifdef macro to enable/disable logging
 
-%     %% Query empty table
-%     W = erlang_testing_web:url_req("http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=test_table_1"),
-%     % ?debugFmt("~p\n", [W]),
-%     ?assertMatch(
-%         {ok,{200,
-%          [{<<"content-length">>,<<"60">>},
-%           {<<"content-type">>,<<"application/json">>},
-%           {<<"date">>, _},
-%           {<<"server">>,<<"Cowboy">>}],
-%          _ % Body
-%          }},
-%         W
-%     ),
-%     {ok, {200, _, WBody}} = W,
-%     ?_assertEqual(
-%         #{
-%             <<"continuation">> => <<"$end_of_table">>,
-%             <<"key_type">> => <<"atom">>,
-%             <<"rows">> => []
-%         },
-%         jsx:decode(WBody, [return_maps])
-%     ).
+    %% Query empty table
+    W = erlang_testing_web:url_req("http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=test_table_1"),
+    % ?debugFmt("W ~p\n", [W]),
+    ?assertMatch(
+        {ok,{200,
+         [{<<"content-length">>,<<"60">>},
+          {<<"content-type">>,<<"application/json">>},
+          {<<"date">>, _},
+          {<<"server">>,<<"Cowboy">>}],
+         _ % Body
+         }},
+        W
+    ),
+    {ok, {200, _, WBody}} = W,
+    ?_assertEqual(
+        #{
+            <<"continuation">> => <<"$end_of_table">>,
+            <<"key_type">> => <<"atom">>,
+            <<"rows">> => []
+        },
+        jsx:decode(WBody, [return_maps])
+    ).
 
-% api_page_entries_one_result(_TestString, AssignedPort) ->
+api_page_entries_one_result(_TestString, AssignedPort) ->
 
-%     %% [setup] Insert something
-%     true = ets:insert(test_table_1, {1, 1}),
-%     ?assert( 1 =:= ets:info(test_table_1, size) ),
+    %% [setup] Insert something
+    true = ets:insert(test_table_1, {1, 1}),
+    ?assert( 1 =:= ets:info(test_table_1, size) ),
 
-%     %% Query table with 1 entry
-%     X = erlang_testing_web:url_req("http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=test_table_1"),
-%     ?debugFmt("~p\n", [X]),
-%     ?assertMatch(
-%         {ok,{200,
-%          [{<<"content-length">>,<<"91">>},
-%           {<<"content-type">>,<<"application/json">>},
-%           {<<"date">>,_},
-%           {<<"server">>,<<"Cowboy">>}],
-%          _ % Body
-%         }},
-%         X
-%     ),
-%     {ok, {200, _, XBody}} = X,
-%     ?assertEqual(
-%         #{
-%             <<"continuation">> => <<"$end_of_table">>,
-%             <<"key_type">> => <<"atom">>,
-%             <<"rows">> => [
-%                 #{
-%                     <<"key">> => 1,
-%                     <<"key_type">> => <<"atom">>,
-%                     <<"values">> => #{
-%                         <<"2">> => <<"1">>
-%                     }
-%                 }
-%             ]
-%         },
-%         jsx:decode(XBody, [return_maps])
-%     ).
+    %% Query table with 1 entry
+    X = erlang_testing_web:url_req("http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=test_table_1"),
+    ?debugFmt("X ~p\n", [X]),
+    ?assertMatch(
+        {ok,{200,
+         [{<<"content-length">>,<<"117">>},
+          {<<"content-type">>,<<"application/json">>},
+          {<<"date">>,_},
+          {<<"server">>,<<"Cowboy">>}],
+         _ % Body
+        }},
+        X
+    ),
+    {ok, {200, _, XBody}} = X,
+    ?_assertEqual(
+        #{
+            <<"continuation">> => <<"$end_of_table">>,
+            <<"key_type">> => <<"atom">>,
+            <<"rows">> => [
+                #{
+                    <<"key">> => 1,
+                    <<"key_type">> => <<"integer">>,
+                    <<"values">> => #{
+                        <<"1">> => <<"1">>,
+                        <<"2">> => <<"1">>
+                    }
+                }
+            ]
+        },
+        jsx:decode(XBody, [return_maps])
+    ).
 
-% api_page_entries_lots_results(_TestString, AssignedPort) ->
+api_page_entries_lots_results(_TestString, AssignedPort) ->
 
-%     %% [setup] Insert some more!!!
-%     [ true = ets:insert(test_table_1, {N, N}) || N <- lists:seq(2, 1000) ],
+    %% [setup] Insert some more!!!
+    [ true = ets:insert(test_table_1, {N, N}) || N <- lists:seq(2, 1000) ],
 
-%     Y = erlang_testing_web:url_req("http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=test_table_1"),
-%     % ?debugFmt("~p\n", [Y]),
-%     ?assertMatch(
-%         {ok,{200,
-%          [{<<"content-length">>,<<"1050">>},
-%           {<<"content-type">>,<<"application/json">>},
-%           {<<"date">>,_},
-%           {<<"server">>,<<"Cowboy">>}],
-%          _ % Body
-%          }},
-%         Y
-%     ),
-%     {ok, {200, _, YBody}} = Y,
-%     ?debugFmt("~p\n", [jsx:decode(YBody, [return_maps])]),
-%     ?assertEqual(
-%         #{
-%             <<"continuation">> => 21,
-%             <<"rows">> =>
-%               [#{<<"key">> => 20,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"20">>}},
-%                #{<<"key">> => 19,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"19">>}},
-%                #{<<"key">> => 18,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"18">>}},
-%                #{<<"key">> => 17,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"17">>}},
-%                #{<<"key">> => 16,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"16">>}},
-%                #{<<"key">> => 15,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"15">>}},
-%                #{<<"key">> => 14,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"14">>}},
-%                #{<<"key">> => 13,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"13">>}},
-%                #{<<"key">> => 12,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"12">>}},
-%                #{<<"key">> => 11,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"11">>}},
-%                #{<<"key">> => 10,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"10">>}},
-%                #{<<"key">> => 9,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"9">>}},
-%                #{<<"key">> => 8,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"8">>}},
-%                #{<<"key">> => 7,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"7">>}},
-%                #{<<"key">> => 6,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"6">>}},
-%                #{<<"key">> => 5,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"5">>}},
-%                #{<<"key">> => 4,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"4">>}},
-%                #{<<"key">> => 3,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"3">>}},
-%                #{<<"key">> => 2,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"2">>}},
-%                #{<<"key">> => 1,<<"key_type">> => <<"integer">>,
-%                  <<"values">> => #{<<"2">> => <<"1">>}}]
-%         },
-%         jsx:decode(YBody, [return_maps])
-%     ),
-%     ok.
+    Y = erlang_testing_web:url_req("http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=test_table_1"),
+    % ?debugFmt("Y ~p\n", [Y]),
+    ?assertMatch(
+        {ok,{200,
+         [{<<"content-length">>,<<"1245">>},
+          {<<"content-type">>,<<"application/json">>},
+          {<<"date">>,_},
+          {<<"server">>,<<"Cowboy">>}],
+         _ % Body
+         }},
+        Y
+    ),
+    {ok, {200, _, YBody}} = Y,
+    ?debugFmt("YBODY ~p\n", [jsx:decode(YBody, [return_maps])]),
+    ?_assertEqual(
+        #{<<"continuation">> => 22,<<"key_type">> => <<"integer">>,
+        <<"rows">> =>
+            [#{<<"key">> => 21,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"21">>,<<"2">> => <<"21">>}},
+             #{<<"key">> => 20,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"20">>,<<"2">> => <<"20">>}},
+             #{<<"key">> => 19,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"19">>,<<"2">> => <<"19">>}},
+             #{<<"key">> => 18,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"18">>,<<"2">> => <<"18">>}},
+             #{<<"key">> => 17,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"17">>,<<"2">> => <<"17">>}},
+             #{<<"key">> => 16,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"16">>,<<"2">> => <<"16">>}},
+             #{<<"key">> => 15,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"15">>,<<"2">> => <<"15">>}},
+             #{<<"key">> => 14,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"14">>,<<"2">> => <<"14">>}},
+             #{<<"key">> => 13,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"13">>,<<"2">> => <<"13">>}},
+             #{<<"key">> => 12,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"12">>,<<"2">> => <<"12">>}},
+             #{<<"key">> => 11,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"11">>,<<"2">> => <<"11">>}},
+             #{<<"key">> => 10,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"10">>,<<"2">> => <<"10">>}},
+             #{<<"key">> => 9,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"9">>,<<"2">> => <<"9">>}},
+             #{<<"key">> => 8,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"8">>,<<"2">> => <<"8">>}},
+             #{<<"key">> => 7,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"7">>,<<"2">> => <<"7">>}},
+             #{<<"key">> => 6,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"6">>,<<"2">> => <<"6">>}},
+             #{<<"key">> => 5,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"5">>,<<"2">> => <<"5">>}},
+             #{<<"key">> => 4,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"4">>,<<"2">> => <<"4">>}},
+             #{<<"key">> => 3,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"3">>,<<"2">> => <<"3">>}},
+             #{<<"key">> => 2,<<"key_type">> => <<"integer">>,
+               <<"values">> => #{<<"1">> => <<"2">>,<<"2">> => <<"2">>}}]},
+        jsx:decode(YBody, [return_maps])
+    ).
 
-% api_page_entries_with_continuation(_TestString, AssignedPort) ->
-%   [ true = ets:insert(test_table_1, {N, N}) || N <- lists:seq(1, 1000) ],
+api_page_entries_with_continuation(_TestString, AssignedPort) ->
+    [ true = ets:insert(test_table_1, {N, N}) || N <- lists:seq(1, 1000) ],
 
-%   Y = erlang_testing_web:url_req("http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=test_table_1&pagesize=3"),
-%   % ?debugFmt("~p\n", [Y]),
-%   ?assertMatch(
-%       {ok,{200,
-%        [{<<"content-length">>,<<"1050">>},
-%         {<<"content-type">>,<<"application/json">>},
-%         {<<"date">>,_},
-%         {<<"server">>,<<"Cowboy">>}],
-%        _ % Body
-%        }},
-%       Y
-%   ),
-%   {ok, {200, _, YBody}} = Y,
-%   ?debugFmt("~p\n", [jsx:decode(YBody, [return_maps])]),
-%   ?assertEqual(
-%       #{
-%           <<"continuation">> => 4,
-%           <<"rows">> =>
-%             [#{<<"key">> => 3,<<"key_type">> => <<"integer">>,
-%                <<"values">> => #{<<"2">> => <<"3">>}},
-%              #{<<"key">> => 2,<<"key_type">> => <<"integer">>,
-%                <<"values">> => #{<<"2">> => <<"2">>}},
-%              #{<<"key">> => 1,<<"key_type">> => <<"integer">>,
-%                <<"values">> => #{<<"2">> => <<"1">>}}]
-%       },
-%       jsx:decode(YBody, [return_maps])
-%   ),
+    Z = erlang_testing_web:url_req("http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=test_table_1&pagesize=3"),
+    % ?debugFmt("~p\n", [Z]),
+    ?assertMatch(
+      {ok,{200,
+       [{<<"content-length">>,<<"222">>},
+        {<<"content-type">>,<<"application/json">>},
+        {<<"date">>,_},
+        {<<"server">>,<<"Cowboy">>}],
+       _ % Body
+       }},
+      Z
+    ),
+    {ok, {200, _, ZBody}} = Z,
+    ?debugFmt("ZBody ~p\n", [jsx:decode(ZBody, [return_maps])]),
+    ?assertEqual(
+      #{
+          <<"continuation">> => 4,
+          <<"key_type">> => <<"integer">>,
+          <<"rows">> =>
+              [#{<<"key">> => 3,
+                 <<"key_type">> => <<"integer">>,
+                 <<"values">> =>
+                     #{<<"1">> => <<"3">>,
+                       <<"2">> => <<"3">>}},
+               #{<<"key">> => 2,
+                 <<"key_type">> => <<"integer">>,
+                 <<"values">> =>
+                     #{<<"1">> => <<"2">>,
+                       <<"2">> => <<"2">>}},
+               #{<<"key">> => 1,
+                 <<"key_type">> => <<"integer">>,
+                 <<"values">> =>
+                     #{<<"1">> => <<"1">>,
+                       <<"2">> => <<"1">>}}]
+    },
+    jsx:decode(ZBody, [return_maps])
+    ),
 
-%   Z = erlang_testing_web:url_req("http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=test_table_1&pagesize=3&continuation=4"),
-%   % ?debugFmt("~p\n", [Z]),
-%   ?assertMatch(
-%       {ok,{200,
-%        [{<<"content-length">>,<<"1050">>},
-%         {<<"content-type">>,<<"application/json">>},
-%         {<<"date">>,_},
-%         {<<"server">>,<<"Cowboy">>}],
-%        _ % Body
-%        }},
-%       Z
-%   ),
-%   {ok, {200, _, ZBody}} = Z,
-%   ?debugFmt("~p\n", [jsx:decode(YBody, [return_maps])]),
-%   ?assertEqual(
-%       #{
-%           <<"continuation">> => 7,
-%           <<"rows">> =>
-%             [#{<<"key">> => 6,<<"key_type">> => <<"integer">>,
-%                <<"values">> => #{<<"2">> => <<"6">>}},
-%              #{<<"key">> => 5,<<"key_type">> => <<"integer">>,
-%                <<"values">> => #{<<"2">> => <<"5">>}},
-%              #{<<"key">> => 4,<<"key_type">> => <<"integer">>,
-%                <<"values">> => #{<<"2">> => <<"4">>}}]
-%       },
-%       jsx:decode(ZBody, [return_maps])
-%   ),
+    AB = erlang_testing_web:url_req("http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=test_table_1&pagesize=3&continuation=4&key_type=integer"),
+    % ?debugFmt("AB ~p\n", [AB]),
+    ?assertMatch(
+      {ok,{200,
+       [{<<"content-length">>,<<"222">>},
+        {<<"content-type">>,<<"application/json">>},
+        {<<"date">>,_},
+        {<<"server">>,<<"Cowboy">>}],
+       _ % Body
+       }},
+      AB
+    ),
+    {ok, {200, _, ABBody}} = AB,
+    ?debugFmt("ABBody ~p\n", [jsx:decode(ABBody, [return_maps])]),
+    ?_assertEqual(
+        #{<<"continuation">> => 7,<<"key_type">> => <<"integer">>,
+         <<"rows">> =>
+             [#{<<"key">> => 6,<<"key_type">> => <<"integer">>,
+                <<"values">> => #{<<"1">> => <<"6">>,<<"2">> => <<"6">>}},
+              #{<<"key">> => 5,<<"key_type">> => <<"integer">>,
+                <<"values">> => #{<<"1">> => <<"5">>,<<"2">> => <<"5">>}},
+              #{<<"key">> => 4,<<"key_type">> => <<"integer">>,
+                <<"values">> => #{<<"1">> => <<"4">>,<<"2">> => <<"4">>}}]
+        },
+        jsx:decode(ABBody, [return_maps])
+    ).
 
-
-
-%   ok.
-
-% create_reply() ->
+% create_reply(AssignedPort) ->
 %     ?assertEqual(
 %         {ok, #{}, #{}},
-%         ets_ui_http_query:create_reply(200, [], #{}, example_cowboy_req())
+%         ets_ui_http_query:create_reply(200, [], #{}, example_cowboy_req(AssignedPort))
 %     ).
 
-% example_cowboy_req() ->
+% example_cowboy_req(AssignedPort) ->
 %     #{
 %         bindings => #{},
 %         body_length => 0,
@@ -1342,7 +1333,7 @@ handle_request_page_through_table() ->
 %             <<"connection">> => <<"keep-alive">>,
 %             <<"dnt">> => <<"1">>,
 %             <<"host">> => <<"localhost:54321">>,
-%             <<"referer">> => <<"http://localhost:"++integer_to_list(AssignedPort)++"/query.html?table=ssl_pem_cache">>,
+%             <<"referer">> => list_to_binary([<<"http://localhost:">>, list_to_binary(integer_to_list(AssignedPort)), <<"/query.html?table=ssl_pem_cache">>]),
 %             <<"sec-fetch-mode">> => <<"cors">>,
 %             <<"sec-fetch-site">> => <<"same-origin">>,
 %             <<"user-agent">> => <<"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36">>,
@@ -1363,15 +1354,6 @@ handle_request_page_through_table() ->
 %         streamid => 3,
 %         version => 'HTTP/1.1'
 %     }.
-
-
-
-
-
-
-
-
-
 
 is_even(X) ->
     X rem 2 == 0.
