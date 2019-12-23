@@ -33,20 +33,26 @@ init(Req, StateMap) ->
     % erlang:display(QueryMap),
     #{ table := TableBinStr } = QueryMap,
     Table = normalise_table_name(TableBinStr),
-    case ets:info(Table) of
-        undefined ->
-            ets_ui_common:create_reply(400, <<"">>, Req, StateMap);
-        TableInfo ->
-            {ResponseCode, Json} =
-            handle_request(
-                QueryMap,
-                StateMap#{
-                    table => Table,
-                    table_info => TableInfo
-                }
-            ),
-            ets_ui_common:create_reply(ResponseCode, Json, Req, StateMap)
-    end.
+    % try
+        case ets:info(Table) of
+            undefined ->
+                ets_ui_common:create_reply(400, <<"">>, Req, StateMap);
+            TableInfo ->
+                {ResponseCode, Json} =
+                handle_request(
+                    QueryMap,
+                    StateMap#{
+                        table => Table,
+                        table_info => TableInfo
+                    }
+                ),
+                ets_ui_common:create_reply(ResponseCode, Json, Req, StateMap)
+        end.
+    % catch
+    %     C:E:_ ->
+    %         ets_ui_common:create_reply(
+    %             400, ets_ui_common:json_sanitize({C, E}), Req, StateMap)
+    % end.
 
 parse_qs(Req) ->
     QueryMap = cowboy_req:match_qs(
@@ -63,6 +69,37 @@ parse_qs(Req) ->
     ),
     QueryMap.
 
+%% TODO: spec out continuation() in X_common.erl
+-spec continuation_function({tuple()} | {atom(), term(), non_neg_integer()})
+        -> {list(), tuple()} | '$end_of_table'.
+continuation_function({Continuation}) ->
+    XXX = ets_ui_common:normalise_erlang_term(
+        Continuation,
+        ets_continuation
+    ),
+    case erlang:is_reference(element(5, XXX)) of
+        false ->
+            true = erlang:is_reference(element(4, XXX));
+        true ->
+            ok
+    end,
+    % erlang:display("USE IT "),
+    % erlang:display(XXX),
+    ets:match_object(
+        XXX
+    );
+continuation_function({Table, TupleWildCard, PageSize}) ->
+    RRR = ets:match_object(
+        Table,
+        ets_ui_common:normalise_erlang_term(
+            TupleWildCard,
+            erl_string
+        ),
+        PageSize
+    ),
+    timer:sleep(50),
+    RRR.
+
 %% Match object
 handle_request(
         #{
@@ -75,32 +112,24 @@ handle_request(
             table_info := TableInfo
         } = _StateMap)
         when TupleWildCard /= undefined ->
-    {Objects, NextContinuation} = case Continuation of
-        undefined when PageSize =/= undefined ->
-            case
-                ets:match_object(
-                    Table,
-                    ets_ui_common:normalise_erlang_term(
-                        TupleWildCard,
-                        erl_string
-                    ),
-                    PageSize
-                )
-            of
-                '$end_of_table' ->
-                    {[], '$end_of_table'};
-                R ->
-                    R
-            end;
-        _ when Continuation /= undefined ->
-            %% TODO: the below can most likely also return end_of_table ...
-            ets:match_object(
-                ets_ui_common:normalise_erlang_term(
-                    Continuation,
-                    ets_continuation
-                )
-            )
-    end,
+
+    MatchArgs =
+        case Continuation of
+            undefined ->
+                {Table, TupleWildCard, PageSize};
+            _ ->
+                {Continuation}
+        end,
+    {Objects, NextContinuation} =
+        case continuation_function(MatchArgs) of
+            '$end_of_table' ->
+                {[], '$end_of_table'};
+            {_, XXX} = NewMatchObjResponse ->
+                % erlang:display("RETURN IT "),
+                % erlang:display(XXX),
+                NewMatchObjResponse
+        end,
+
     {keypos, KeyPos} = proplists:lookup(keypos, TableInfo),
     Rows =
         (json_rows(

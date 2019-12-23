@@ -28,14 +28,16 @@ cowboy_startup() ->
             }
         }
     ),
+    UsedPort =
     case ranch_server:get_addr(ets_ui_http) of
         {_Ip, Port} ->
-            ok;
+            Port;
         {_Ip, AssignedPort} ->
             ok = application:set_env(ets_ui, assigned_port, AssignedPort),
             %% TODO: change this to be logging
-            logger:warning("!\n\nCowboy started on port ~p\n\n!", [AssignedPort])
+            AssignedPort
     end,
+    logger:warning("!\n\nCowboy started on port ~p\n\n!", [UsedPort]),
     {ok, RanchPid}.
 
 % -spec routes() -> list({term(), atom(), term()}).

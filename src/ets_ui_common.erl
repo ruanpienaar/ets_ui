@@ -17,6 +17,8 @@ normalise_erlang_term(V, known_atom) when is_binary(V) ->
     list_to_existing_atom(binary_to_list(V));
 normalise_erlang_term(V, ets_continuation) ->
     case normalise_erlang_term(V, erl_string) of
+        {error, ErrorInfo, ErrorLocation} ->
+            {error, ErrorInfo, ErrorLocation};
         % {tab(),integer(),integer(),comp_match_spec(),list(),integer()}
         {A, B, C, Ref, D, E} when is_list(Ref) ->
             {A, B, C, erlang:list_to_ref(Ref), D, E};
