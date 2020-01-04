@@ -10,9 +10,10 @@
     content_types_provided/2
 ]).
 
+%% Cowboy exports
+-define(COWBOY_JSON_RESPONSE, create_json_response).
 -export([
-    create_json_response/1,
-    create_json_response/2
+    ?COWBOY_JSON_RESPONSE/2
 ]).
 
 init(Req, State) ->
@@ -42,24 +43,21 @@ content_types_provided(Req, State) ->
         [
             {
                 {<<"application">>, <<"json">>, []},
-                create_json_response
+                ?COWBOY_JSON_RESPONSE
             }
         ],
         Req,
         State
     }.
 
-create_json_response(A) ->
-    erlang:display(A).
-
-create_json_response(Req, #{ table_info := TableInfo } = State) ->
+?COWBOY_JSON_RESPONSE(Req, #{ table_info := TableInfo } = State) ->
     SaneJson = lists:map(fun({K, V}) ->
         {
             ets_ui_common:json_sanitize(K),
             ets_ui_common:json_sanitize(V)
         }
     end, TableInfo),
-    erlang:display(SaneJson),
+    % erlang:display(SaneJson),
     {
         jsx:encode(SaneJson),
         Req,

@@ -1,6 +1,6 @@
 -module(ets_ui_http_query_tests).
 
--define(NODEBUG, true).
+% -define(NODEBUG, true).
 
 -include_lib("eunit/include/eunit.hrl").
 -include("ets_ui.hrl").
@@ -20,28 +20,28 @@ unit_test_() ->
     {foreach,
      fun() ->
 
-        % A = ets:new(test_table_1,
-        %     [public, named_table, ordered_set]),
-        % B = ets:new(test_table_2,
-        %     [public, named_table, ordered_set, {keypos, 2}]),
+        A = ets:new(test_table_1,
+            [public, named_table, ordered_set]),
+        B = ets:new(test_table_2,
+            [public, named_table, ordered_set, {keypos, 2}]),
 
-        Pid = spawn(fun table_owner/0),
-        Pid ! {self(), create, test_table_1, [public, named_table, ordered_set]},
-        receive
-            {created, _} ->
-                ok
-        after
-            1000 ->
-                halt(1)
-        end,
-        Pid ! {self(), create, test_table_2, [public, named_table, ordered_set, {keypos, 2}]},
-        receive
-            {created, _} ->
-                ok
-        after
-            1000 ->
-                halt(1)
-        end,
+        % Pid = spawn(fun table_owner/0),
+        % Pid ! {self(), create, test_table_1, [public, named_table, ordered_set]},
+        % receive
+        %     {created, _} ->
+        %         ok
+        % after
+        %     1000 ->
+        %         halt(1)
+        % end,
+        % Pid ! {self(), create, test_table_2, [public, named_table, ordered_set, {keypos, 2}]},
+        % receive
+        %     {created, _} ->
+        %         ok
+        % after
+        %     1000 ->
+        %         halt(1)
+        % end,
 
         %% When tracing it works !!! wtf
 
@@ -51,27 +51,64 @@ unit_test_() ->
                 % dbg:tpl(ets_ui_common, normalise_erlang_term, cx),
                 % dbg:tpl(ets_ui_common, create_reply, cx),
                 % dbg:tpl(ets_ui_common, term_to_bin_string, cx),
-        dbg:tpl(ets_ui_common, json_sanitize, cx),
+        % dbg:tpl(ets_ui_common, json_sanitize, cx),
 
-        % [A, B]
-        Pid
+        [A, B]
+        % Pid
 
         %% TODO: test diff tables
         % ets:new(test_table_1, [protected, named_table, ordered_set]),
         % ets:new(test_table_1, [private, named_table, ordered_set])
      end,
-     fun(TableOwner) ->
-        erlang:exit(TableOwner, kill)
+     fun( Tables) -> % TableOwner) ->
+        % erlang:exit(TableOwner, kill)
         % Using the delete to clear the table :)
-        % [ ets:delete(Table) || Table <- Tables ]
+        [ ets:delete(Table) || Table <- Tables ]
      end,
      [
-        {"ets_ui_http_query:get_next_n_objects/3", fun get_next_n_objects/0},
+        {"ets_ui_http_query:continuation_function/1", fun continuation_function/0}
+        % {"ets_ui_http_query:get_next_n_objects/3", fun get_next_n_objects/0},
         % {"ets_ui_http_query:handle_request/3 match_object", fun handle_request_match_object/0},
-        {"ets_ui_http_query:handle_request/3 lookup", fun handle_request_lookup/0},
-        {"ets_ui_http_query:handle_request/3 page_through_table", fun handle_request_page_through_table/0}
+        % {"ets_ui_http_query:handle_request/3 lookup", fun handle_request_lookup/0},
+        % {"ets_ui_http_query:handle_request/3 page_through_table", fun handle_request_page_through_table/0}
      ]
     }.
+
+continuation_function() ->
+    % ?assertEqual(
+    %     '$end_of_table',
+    %     ets_ui_http_query:continuation_function({test_table_1, <<"'_'">>, 1})
+    % ),
+    % ?assertEqual(
+    %     '$end_of_table',
+    %     ets_ui_http_query:continuation_function({<<"'$end_of_table'">>})
+    % ),
+
+    % %% [setup] Insert something
+    % true = ets:insert(test_table_1, {1, 1}),
+    % % true = ets:insert(test_table_1, {2, 2}),
+    % Resp1 = ets_ui_http_query:continuation_function({test_table_1, <<"'_'">>, 1}),
+    % ?assertMatch(
+    %     {
+    %         [{1,1}],
+    %         ContinuationPid
+    %     } when is_pid(ContinuationPid),
+    %     Resp1
+    % ),
+    % {_, ContinuationPid} = Resp1,
+
+    % Resp1 = ets_ui_http_query:continuation_function({ContinuationPid}),
+
+    % ?assertMatch(
+
+    % )
+
+    % ?assertEqual(
+    %     '$end_of_table',
+    %     ets_ui_http_query:continuation_function({  })
+    % ).
+
+    ok.
 
 get_next_n_objects() ->
     %% Run over empty table ( no continuation + no entries )
@@ -1282,12 +1319,21 @@ http_unit_test_() ->
         ok = application:load(ets_ui),
         ok = application:set_env(ets_ui, http_port, 0),
         {ok, Pid} = ets_ui_http:start_link(),
+
+        % dbg:tracer(),
+        % dbg:p(all, call),
+        % dbg:tpl(holster_sm, cx),
+
         {{ok, Pid}, lists:reverse(Apps) ++ lists:reverse(Apps2)}
      end,
      fun({{ok, Pid}, Apps}) ->
+
+        % ok = dbg:stop_clear(),
+
         true = erlang:unlink(Pid),
         [ ok = application:stop(App) || App <- Apps ],
         true = erlang:exit(Pid, kill),
+        ok = application:unload(ets_ui),
         true = ets:delete(http_test_table_1)
      end,
      [
@@ -1300,21 +1346,16 @@ http_unit_test_() ->
             ets:delete_all_objects(http_test_table_1)
          end,
          [
-            {"api page entries ( no results )",
-                fun api_page_entries_no_results/2},
-            {"api page entries ( one result )",
-                fun api_page_entries_one_result/2},
-            {"api page entries ( lots of results )",
-                fun api_page_entries_lots_results/2},
-            {"api page entries ( continuation )",
-                fun api_page_entries_with_continuation/2},
-            {"api match_object ( continuation )",
-                fun api_match_object/2},
-
-            {"see whether creating the ets continuation obj takes time in the background",
-                  fun crazy_me/2
-            }
-
+            % {"api page entries ( no results )",
+            %     fun api_page_entries_no_results/2},
+            % {"api page entries ( one result )",
+            %     fun api_page_entries_one_result/2},
+            % {"api page entries ( lots of results )",
+            %     fun api_page_entries_lots_results/2},
+            % {"api page entries ( continuation )",
+            %     fun api_page_entries_with_continuation/2},
+            % {"api match_object ( continuation )",
+            %     fun api_match_object/2}
          ]
         }
      ]
@@ -1642,7 +1683,7 @@ api_match_object(_TestString, AssignedPort) ->
     % Then do 198 here
     LastLoopURL = build_cont_url(AssignedPort, LastContinuation),
     LastResp = erlang_testing_web:url_req(LastLoopURL),
-    ?assertMatch(
+    ?_assertMatch(
         {ok,
           {200,
            [{<<"content-length">>,<<"60">>},
@@ -1651,32 +1692,19 @@ api_match_object(_TestString, AssignedPort) ->
             {<<"server">>,<<"Cowboy">>}],
            <<"{\"continuation\":\"$end_of_table\",\"key_type\":\"atom\",\"rows\":[]}">>}},
         LastResp
-    ),
+    ).
 
-    ?_assert(true).
-
-crazy_me(_TestString, AssignedPort) ->
-
-
-    [ true = ets:insert(http_test_table_1, {N, N}) || N <- lists:seq(1, 1000) ],
-
-
-    ?_assert(true).
-
-
+%%
+%% Internal
 
 build_cont_url(AssignedPort, NextContinuation) ->
     "http://localhost:"++
-    integer_to_list(AssignedPort)++"/api/query?" ++
+    integer_to_list(AssignedPort)++
+    "/api/query?" ++
     "table=http_test_table_1&tuple_wildcard=" ++
     http_uri:encode("'_'") ++
     "&continuation=" ++
     http_uri:encode(binary_to_list(NextContinuation)).
-
-
-
-
-
 
 % create_reply(AssignedPort) ->
 %     ?assertEqual(

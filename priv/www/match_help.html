@@ -1,30 +1,42 @@
 <!doctype html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <title>ETS UI</title>
-
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.0/css/bootstrap.min.css" integrity="sha384-PDle/QlgIONtM1aqA2Qemk5gPOE7wFq8+Em+G/hmo5Iq0CCmYZLv3fVRDJ4MMwEA" crossorigin="anonymous">
-
   <link rel="stylesheet" href="css/main.css">
   <link rel="icon" href="images/favicon.png">
+  <link rel="stylesheet" href="highlight/styles/default.css">
+  <script src="highlight/highlight.pack.js"></script>
 </head>
-
 <body>
-    <div class="container" id="all">
-        
+    <main role="main">
+    <div class="container-fluid">
+        <div>
+            <h3><a href="index.html">All Tables</a></h3>
+        </div>
+        <div>
+            <hr />
+        </div>
+
+        <h2>Lookup help</h2>
+        <p>The ETS <a target="_blank" src="">match</a> functionality finds entries that match the specified match_pattern, and returns the pattern variables as results.
+        </p>
+
     </div>
+    </main>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.0/js/bootstrap.min.js" integrity="sha384-7aThvCh9TypR7fIc2HV4O/nFMVCBwyIUKL8XCtKE+8xgCgl/PQGuFsvShjr74PBp" crossorigin="anonymous"></script>
-    <script src="js/common.js"></script>
-    <script src="js/all.js"></script>
+    <script type="text/javascript" src="js/common.js"></script>
+    <script type="text/javascript">
+        $('document').ready(function(){
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightBlock(block);
+            });
+        });
+    </script>
 </body>
-
 </html>
-
-

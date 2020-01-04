@@ -60,7 +60,7 @@ sanitize_map(Map) ->
     ).
 
 exclude(Info, Name, RegName) ->
-    {protection, Protec} = proplists:lookup(protection, Info),
+    {protection, _Protec} = proplists:lookup(protection, Info),
     case
         lists:member(Name, sys_tables())
         %% TODO: Check that the front-end/api calls don't query private tables

@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ETS UI</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.0/css/bootstrap.min.css" integrity="sha384-PDle/QlgIONtM1aqA2Qemk5gPOE7wFq8+Em+G/hmo5Iq0CCmYZLv3fVRDJ4MMwEA" crossorigin="anonymous">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="icon" href="images/favicon.png">
+  <link rel="stylesheet" href="highlight/styles/default.css">
+  <script src="highlight/highlight.pack.js"></script>
+</head>
+<body>
+    <main role="main">
+    <div class="container-fluid">
+        <div>
+            <h3><a href="index.html">All Tables</a></h3>
+        </div>
+        <div>
+            <hr />
+        </div>
+
+        <h2>Match object help</h2>
+        <p>The ETS <a target="_blank" href="https://erlang.org/doc/man/ets.html#match_object-2" >match_object</a> functionality finds entries in the selected <a target="_blank" href="https://erlang.org/doc/man/ets.html#new-2">table</a> that matches against a <a target="_blank" href="https://erlang.org/doc/man/ets.html#type-match_pattern">match_pattern</a></p>
+
+        <p><h4>Some notes on matching</h4></p>
+        <p>
+            <ul>
+                <li>
+                    <p>When matching on maps, be sure to include all the map keys. Consider the follow entry.</p>
+                    <pre><code>
+                        {123456, "johndoe_user1", #{ name => "john", surname => "doe", telephone => 01234567890 }}]
+                    </code></pre>
+                    <p>use the '_' wildcard for not matching on, and specify a match for the telephone value </p>
+                    <pre><code>
+                        {123456, '_', #{ name => '_', surname => '_', telephone => 01234567890 }}
+                    </code></pre>
+                    <p>in this example it will only match on entries with a map that has one key ( telephone ) set, so it won't return the entry mentioned above.</p>
+                    <pre><code>
+                        {123456, '_', #{ telephone => 01234567890 }}
+                    </code></pre>
+                </li>
+
+            </ul>
+        </p>
+
+        <p><h4>Simple example</h4></p>
+        <p>Lets create our table</p>
+        <pre><code class="Erlang">
+            1> ets:new(example_table, [public, named_table, ordered_set]).
+            example_table
+            2>
+        </code></pre>
+        <p>
+            public, so that anyone can read/write to it, named_table is for accessing it by name and ordered_set is a fancy way of saying the table key/index is ordered, and has no duplicates.
+        </p>
+        <p>Then insert some entries</p>
+        <pre><code class="Erlang">
+            2> [ ets:insert(example_table, {Id, Id rem 2 == 0}) || Id <- lists:seq(1, 10) ].
+            [true,true,true,true,true,true,true,true,true,true]
+            3>
+        </code></pre>
+        <p>
+            <pre><code class="Erlang">rem 2 == 0</code></pre>
+            is a simple check whether the key is odd/even, for visual aid in querying.
+        </p>
+        <p>fetching all would result in</p>
+        <pre><code class="Erlang">
+            {1,false}
+            {2,true}
+            {3,false}
+            {4,true}
+            {5,false}
+            {6,true}
+            {7,false}
+            {8,true}
+            {9,false}
+            {10,true}
+        </code></pre>
+        <p>So let's find all entries that had a even key, enter the follow into the match_object textbox</p>
+        <pre><code class="Erlang">
+            {'_', true}
+        </code></pre>
+        <p>So the match_object on the match_spec above will result with the entries below</p>
+        <pre><code class="Erlang">
+            {2,true}
+            {4,true}
+            {6,true}
+            {8,true}
+            {10,true}
+        </code></pre>
+        <p style="font-weight:bold;">That was a simple match_object</p>
+
+        <hr />
+
+        <p><h4>A Erlang Record entry example</h4></p>
+        <p>Lets create our table</p>
+        <pre><code class="Erlang">
+            1> ets:new(record_table, [named_table, public, set, {keypos, 2}]).
+            record_table
+            2>
+        </code></pre>
+        <p>
+            public, so that anyone can read/write to it, named_table is for accessing it by name and set will be used, so no duplicates.
+            {keypos, 2} specifies that value 2 of the tuple will be used as the key/index,
+            and that's normally the first value of a Erlang record.
+        </p>
+        <pre><code class="Erlang">
+            {example_record, 1, false}  =  #example_record{ col1 = 1, is_even = false }.
+        </code></pre>
+        <p>Then insert some entries</p>
+        <pre><code class="Erlang">
+            2> [ ets:insert(record_table, #example_record{ col1 = Id, is_even = Id rem 2 == 0 }) || Id <- lists:seq(1, 10) ].
+            [true,true,true,true,true,true,true,true,true,true]
+            3>
+        </code></pre>
+        <p>fetching all would result in ( take note, the entries are not ordered )</p>
+        <pre><code class="Erlang">
+            {example_record,5,false}
+            {example_record,2,true}
+            {example_record,6,true}
+            {example_record,4,true}
+            {example_record,9,false}
+            {example_record,10,true}
+            {example_record,3,false}
+            {example_record,7,false}
+            {example_record,1,false}
+            {example_record,8,true}
+        </code></pre>
+        <p>So let's find all entries that had a even key with in the match_object textbox</p>
+        <pre><code class="Erlang">
+            {'_', true}
+        </code></pre>
+        <p>So the match_object on the match_spec above will result with the entries below</p>
+        <pre><code class="Erlang">
+            {example_record,8,true}
+            {example_record,10,true}
+            {example_record,4,true}
+            {example_record,6,true}
+            {example_record,2,true}
+        </code></pre>
+        <p style="font-weight:bold;">That was a match_object on tables with Erlang records as entries</p>
+
+    </div>
+    </main>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.0/js/bootstrap.min.js" integrity="sha384-7aThvCh9TypR7fIc2HV4O/nFMVCBwyIUKL8XCtKE+8xgCgl/PQGuFsvShjr74PBp" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="js/common.js"></script>
+    <script type="text/javascript">
+        $('document').ready(function(){
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightBlock(block);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -9,8 +9,8 @@ body {
     zoom: 0.8
 }
 
-H1 {display: inline;}
-H2 {display: inline;}
+/*H1 {display: inline;}
+H2 {display: inline;}*/
 
 pre {
  white-space: pre-wrap;       /* css-3 */
@@ -18,4 +18,9 @@ pre {
  white-space: -pre-wrap;      /* Opera 4-6 */
  white-space: -o-pre-wrap;    /* Opera 7 */
  word-wrap: break-word;       /* Internet Explorer 5.5+ */
+}
+
+code {
+  display: block;
+  white-space: pre-wrap
 }

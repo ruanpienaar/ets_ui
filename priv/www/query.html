@@ -11,70 +11,107 @@
         <link rel="stylesheet" href="highlight/styles/default.css">
         <script src="highlight/highlight.pack.js"></script>
     </head>
-    <body><form>
+    <body>
+        <main role="main">
         <div class="container-fluid">
-            <div class="row">
-                <h3><a href="index.html">Tables</a></h3>
+            <div>
+                <h3><a href="index.html">All Tables</a></h3>
             </div>
-            <div class="row">
+            <div>
                 <hr />
             </div>
-            <div class="row">
-                <h2><span id="tblname"></span><h2>
+            <div>
+                <h2><span id="tblname"></span></h2>
             </div>
-            <div class="row">
-                <label for="ets_key"><h5>Ets Key Lookup</h5></label>
-                <input class="form-control" style="display: inline;" type="text" id="ets_key"  />
-                <label class="form-control" for="key_type">Key Data Type:</label>
-                <select class="form-control" id="key_type">
-                    <option value="atom">atom</option>
-                    <option value="binary">binary</option>
-                    <option value="bitstring">bitstring</option>
-                    <option value="boolean">boolean</option>
-                    <option value="float">float</option>
-                    <option value="function">function</option>
-                    <option value="integer">integer</option>
-                    <option value="list">list</option>
-                    <option value="map">map</option>
-                    <option value="number">number</option>
-                    <option value="pid">pid</option>
-                    <option value="port">port</option>
-                    <option value="reference">reference</option>
-                    <option value="tuple">tuple</option>
-                </select>
-                <button class="btn btn-primary" id="lookup" >ETS Lookup</button>
-            </div>
-            <div class="row">
-                <hr />
-            </div>
-            <div class="row">
-                <label for="query_type"><h5>Ets Match spec</h5></label>
-                <input class="form-control" style="display: inline;" type="text" id="tuple_value" />
-                <button class="btn btn-primary" id="tuple_wildcard" >ETS Match Spec</button>
-            </div>
-            <!-- <div class="row">
-                <button class="btn btn-primary" id="download" >Download table contents</button>
-            </div> -->
-            <div style="text-align: center" class="row">
-                <button class="form-control" >Prev</button>
-                <div>Continuation:</div>
-                <div id="continuation"></div>
-                <input type="hidden" name="continuation_val" id="continuation_val" />
-                <div>Data type:</div>
-                <div id="key_data_type"></div>
-                <input type="hidden" name="key_data_type_val" id="key_data_type_val" />
-                <button type="button" id="next" class="form-control" >Next</button>
-            </div>
-            <div class="row">
-                <div>
-                    <pre><code class="json" id="query_results"></code></pre>
+
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col">
+                        <div>
+                            <h5>Entry Lookup</h5>
+                        </div>
+                        <div>
+                            <label for="ets_key">Key</label>
+                        </div>
+                        <textarea id="ets_key"></textarea>
+                        <br />
+                        <button type="button" class="btn btn-primary" id="lookup" >Lookup</button>
+                        <button type="button" class="btn btn-warning" id="lookup_erl_code">Get Erlang Code</button>
+                        <a target="_blank" href="lookup_help.html" >Help</a>
+                    </div>
+                    <div class="col">
+                        <div>
+                            <h5>Query for entries matching a pattern</h5>
+                        </div>
+                        <div>
+                            <label for="match_object_spec">Match object Ex. {123, '_', ... </label>
+                        </div>
+                        <textarea cols="40" rows="3" id="match_object_spec"></textarea>
+                        <br />
+                        <button class="btn btn-primary" id="match_object_btn" >Query</button>
+                        <button type="button" class="btn btn-warning">Get Erlang Code</button>
+                        <a target="_blank" href="match_object_help.html" >Help</a>
+                    </div>
+                    <div class="col">
+                        <div>
+                            <h5>Query for entries with conditions</h5>
+                        </div>
+                        <div>
+                            <label for="match_spec">Match Ex. {[$5,$5,$5,$- |'$1'],'$2'}</label>
+                        </div>
+                        <textarea cols="40" rows="3" id="match_spec"></textarea>
+                        <br />
+                        <button class="btn btn-primary" id="match_btn" >Query</button>
+                        <button type="button" class="btn btn-warning">Get Erlang Code</button>
+                        <a target="_blank" href="match_help.html" >Help</a>
+                    </div>
                 </div>
             </div>
+
+            <hr />
+
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col">
+                        <div style="text-align: center;">
+                            <button type="button" class="btn btn-primary" id="fetch">Get entries</button>
+                            <label for="pagesize">Results per page</label>
+                            <select id="pagesize" class="btn btn-primary">
+                                <option value="3">3</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="500">500</option>
+                            </select>
+                            <button type="button" id="next" class="btn btn-secondary" >Next Results</button>
+                            <button type="button" id="toggle_entry_json" class="btn btn-dark">Toggle Entries/JSON</button>
+                            <div style="display: none;">Continuation:<span id="continuation"></span></div>
+                            <input type="hidden" name="continuation_val" id="continuation_val" />
+                            <div style="display: none;">Data type:<span id="key_data_type"></span></div>
+                            <input type="hidden" name="key_data_type_val" id="key_data_type_val" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="color: red;" id="error_block">
+            </div>
+            <hr />
+            <div>
+                <h5>ETS table entries/JSON</h5>
+            </div>
+            <div id="erlang_entries_div">
+                <pre><code class="Erlang" id="erlang_entries"></code></pre>
+            </div>
+            <div id="query_results_div" style="display: none;">
+                <pre><code class="json" id="query_results"></code></pre>
+            </div>
         </div>
+        </main>
+
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.0/js/bootstrap.min.js" integrity="sha384-7aThvCh9TypR7fIc2HV4O/nFMVCBwyIUKL8XCtKE+8xgCgl/PQGuFsvShjr74PBp" crossorigin="anonymous"></script>
-        <script src="js/common.js"></script>
-        <script src="js/query.js"></script>
-    </form></body>
+        <script type="text/javascript" src="js/common.js"></script>
+        <script type="text/javascript" src="js/query.js"></script>
+    </body>
 </html>
