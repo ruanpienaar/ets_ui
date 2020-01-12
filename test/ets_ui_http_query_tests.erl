@@ -45,8 +45,8 @@ unit_test_() ->
 
         %% When tracing it works !!! wtf
 
-        dbg:tracer(),
-        dbg:p(all, call),
+        % dbg:tracer(),
+        % dbg:p(all, call),
                 % dbg:tpl(ets, match_object, cx),
                 % dbg:tpl(ets_ui_common, normalise_erlang_term, cx),
                 % dbg:tpl(ets_ui_common, create_reply, cx),
@@ -66,57 +66,54 @@ unit_test_() ->
         [ ets:delete(Table) || Table <- Tables ]
      end,
      [
-        {"ets_ui_http_query:continuation_function/1", fun continuation_function/0}
-        % {"ets_ui_http_query:get_next_n_objects/3", fun get_next_n_objects/0},
+        % {"ets_ui_http_query:continuation_function/1", fun continuation_function/0}
+        {"ets_ui_http_query:get_next_n_objects/3", fun get_next_n_objects/0}
         % {"ets_ui_http_query:handle_request/3 match_object", fun handle_request_match_object/0},
         % {"ets_ui_http_query:handle_request/3 lookup", fun handle_request_lookup/0},
         % {"ets_ui_http_query:handle_request/3 page_through_table", fun handle_request_page_through_table/0}
      ]
     }.
 
-continuation_function() ->
-    % ?assertEqual(
-    %     '$end_of_table',
-    %     ets_ui_http_query:continuation_function({test_table_1, <<"'_'">>, 1})
-    % ),
-    % ?assertEqual(
-    %     '$end_of_table',
-    %     ets_ui_http_query:continuation_function({<<"'$end_of_table'">>})
-    % ),
+% continuation_function() ->
+%     ?assertEqual(
+%         '$end_of_table',
+%         ets_ui_http_query:continuation_function({test_table_1, <<"'_'">>, 1})
+%     ),
+%     ?assertEqual(
+%         '$end_of_table',
+%         ets_ui_http_query:continuation_function({<<"'$end_of_table'">>})
+%     ),
 
-    % %% [setup] Insert something
-    % true = ets:insert(test_table_1, {1, 1}),
-    % % true = ets:insert(test_table_1, {2, 2}),
-    % Resp1 = ets_ui_http_query:continuation_function({test_table_1, <<"'_'">>, 1}),
-    % ?assertMatch(
-    %     {
-    %         [{1,1}],
-    %         ContinuationPid
-    %     } when is_pid(ContinuationPid),
-    %     Resp1
-    % ),
-    % {_, ContinuationPid} = Resp1,
+%     %% [setup] Insert something
+%     true = ets:insert(test_table_1, {1, 1}),
+%     % true = ets:insert(test_table_1, {2, 2}),
+%     Resp1 = ets_ui_http_query:continuation_function({test_table_1, <<"'_'">>, 1}),
+%     ?assertMatch(
+%         {
+%             [{1,1}],
+%             ContinuationPid
+%         } when is_pid(ContinuationPid),
+%         Resp1
+%     ),
+%     {_, ContinuationPid} = Resp1,
 
-    % Resp1 = ets_ui_http_query:continuation_function({ContinuationPid}),
+%     Resp1 = ets_ui_http_query:continuation_function({ContinuationPid}),
 
-    % ?assertMatch(
+%     % ?assertMatch(
 
-    % )
+%     % )
 
-    % ?assertEqual(
-    %     '$end_of_table',
-    %     ets_ui_http_query:continuation_function({  })
-    % ).
-
-    ok.
+%     ?assertEqual(
+%         '$end_of_table',
+%         ets_ui_http_query:continuation_function({  })
+%     ).
 
 get_next_n_objects() ->
     %% Run over empty table ( no continuation + no entries )
     ?assertEqual(
         #{
             continuation => '$end_of_table',
-            entries => [],
-            key_type => atom
+            entries => []
         },
         ets_ui_http_query:get_next_n_objects(
             test_table_1, % Table
@@ -131,12 +128,10 @@ get_next_n_objects() ->
     %% test 1 entry ( no continuation + 1 entry )
     ?assertEqual(
         #{
-            continuation => '$end_of_table',
             entries =>
                 [
                     {1, 1}
-                ],
-            key_type => atom
+                ]
         },
         ets_ui_http_query:get_next_n_objects(
             test_table_1, % Table
@@ -151,9 +146,7 @@ get_next_n_objects() ->
     ?assertEqual(
         #{
             continuation => '$end_of_table',
-            entries =>
-                [],
-            key_type => atom
+            entries => []
         },
         ets_ui_http_query:get_next_n_objects(
             test_table_1, % Table
@@ -191,8 +184,7 @@ get_next_n_objects() ->
                 {18,18},
                 {19,19},
                 {20,20}
-            ],
-            key_type => integer
+            ]
         },
         ets_ui_http_query:get_next_n_objects(
             test_table_1, % Table
@@ -211,8 +203,7 @@ get_next_n_objects() ->
                 {22,22},
                 {23,23},
                 {24,24}
-            ],
-            key_type => integer
+            ]
         },
         ets_ui_http_query:get_next_n_objects(
             test_table_1, % Table
@@ -230,8 +221,7 @@ get_next_n_objects() ->
                 {42,42},
                 {43,43},
                 {44,44}
-            ],
-            key_type => integer
+            ]
         },
         ets_ui_http_query:get_next_n_objects(
             test_table_1, % Table
@@ -263,8 +253,7 @@ get_next_n_objects() ->
                 {59,59},
                 {60,60},
                 {61,61}
-            ],
-            key_type => integer
+            ]
         },
         ets_ui_http_query:get_next_n_objects(
             test_table_1, % Table
@@ -309,8 +298,7 @@ get_next_n_objects() ->
                 {126,126},
                 {127,127},
                 {128,128}
-            ],
-            key_type => integer
+            ]
         },
         ets_ui_http_query:get_next_n_objects(
             test_table_1, % Table
@@ -329,7 +317,7 @@ handle_request_match_object() ->
     ParsedQsMap1 = #{
         tuple_wildcard => <<"'_'">>,
         continuation => undefined,
-        pagesize => ?DEFAULT_PAGESIZE
+        pagesize => 20
     },
     StateMap1 = #{
         table => test_table_1,
@@ -366,7 +354,7 @@ handle_request_match_object() ->
     ParsedQsMap2 = #{
         tuple_wildcard => <<"'_'">>,
         continuation => undefined,
-        pagesize => ?DEFAULT_PAGESIZE
+        pagesize => 20
     },
     StateMap2 = #{
         table => test_table_1,
@@ -404,7 +392,7 @@ handle_request_match_object() ->
     ParsedQsMap3 = #{
         tuple_wildcard => <<"'_'">>,
         continuation => undefined,
-        pagesize => ?DEFAULT_PAGESIZE
+        pagesize => 20
     },
     StateMap3 = #{
         table => test_table_1,
@@ -555,7 +543,7 @@ handle_request_match_object() ->
     ParsedQsMap4 = #{
         tuple_wildcard => <<"'_'">>,
         continuation => NextContinuation1,
-        pagesize => ?DEFAULT_PAGESIZE
+        pagesize => 20
     },
     StateMap4 = #{
         table => test_table_1,
@@ -709,7 +697,7 @@ handle_request_match_object() ->
     ParsedQsMap5 = #{
         tuple_wildcard => <<"'_'">>,
         continuation => NextContinuation2,
-        pagesize => ?DEFAULT_PAGESIZE
+        pagesize => 20
     },
     StateMap5 = #{
         table => test_table_1,
@@ -804,7 +792,7 @@ handle_request_page_through_table() ->
     ParsedQsMap1 = #{
         key_type => undefined,
         continuation => undefined,
-        pagesize => ?DEFAULT_PAGESIZE
+        pagesize => 20
     },
     StateMap1 = #{
         table => test_table_1,
@@ -840,7 +828,7 @@ handle_request_page_through_table() ->
     ParsedQsMap2 = #{
         key_type => undefined,
         continuation => undefined,
-        pagesize => ?DEFAULT_PAGESIZE
+        pagesize => 20
     },
     StateMap2 = #{
         table => test_table_1,
@@ -885,7 +873,7 @@ handle_request_page_through_table() ->
     ParsedQsMap3 = #{
         key_type => undefined,
         continuation => undefined,
-        pagesize => ?DEFAULT_PAGESIZE
+        pagesize => 20
     },
     StateMap3 = #{
         table => test_table_1,
@@ -976,7 +964,7 @@ handle_request_page_through_table() ->
     ParsedQsMap4 = #{
         key_type => <<"integer">>,
         continuation => <<"21">>,
-        pagesize => ?DEFAULT_PAGESIZE
+        pagesize => 20
     },
     StateMap4 = #{
         table => test_table_1,
@@ -1067,7 +1055,7 @@ handle_request_page_through_table() ->
     ParsedQsMap5 = #{
         key_type => <<"integer">>,
         continuation => <<"41">>,
-        pagesize => ?DEFAULT_PAGESIZE
+        pagesize => 20
     },
     StateMap5 = #{
         table => test_table_1,
@@ -1128,7 +1116,7 @@ handle_request_page_through_table() ->
     ParsedQsMap6 = #{
         key_type => <<"atom">>,
         continuation => <<"$end_of_table">>,
-        pagesize => ?DEFAULT_PAGESIZE
+        pagesize => 20
     },
     StateMap6 = #{
         table => test_table_1,
@@ -1167,7 +1155,7 @@ handle_request_page_through_table() ->
     ParsedQsMap7 = #{
         key_type => undefined,
         continuation => undefined,
-        pagesize => ?DEFAULT_PAGESIZE
+        pagesize => 20
     },
     StateMap7 = #{
         table => test_table_2,

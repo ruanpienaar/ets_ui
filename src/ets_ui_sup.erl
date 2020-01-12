@@ -46,12 +46,12 @@ init([]) ->
 
 set_otp_version() ->
     % http://erlang.org/doc/system_principles/versions.html
-    case 
+    case
         file:read_file(
             filename:join([
                 code:root_dir(), "releases", erlang:system_info(otp_release), "OTP_VERSION"
             ])
-        ) 
+        )
     of
         {ok, VsnString} ->
             OtpVersion = hd(binary:split(VsnString, <<"\n">>)),
@@ -59,3 +59,6 @@ set_otp_version() ->
         _ ->
             ok
     end.
+
+create_atoms() ->
+    [fun_to_ms].
