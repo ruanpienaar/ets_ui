@@ -20,8 +20,23 @@
 %% TODO: don't use bin_string data types ( was sent from webpage )
 %% change args to be atoms...
 
+-spec normalise_erlang_term(term(), known_atom | erl_fun_string | erl_string | pid)
+        -> {ok, term()}.
 normalise_erlang_term(V, known_atom) when is_binary(V) ->
-    list_to_existing_atom(binary_to_list(V));
+    {ok, list_to_existing_atom(binary_to_list(V))};
+normalise_erlang_term(V, erl_fun_string) ->
+    case erl_scan:string(binary_to_list(V) ++ ".") of
+        {ok, Tokens, _EndLocation} ->
+            case erl_parse:parse_exprs(Tokens) of
+                {ok, ExprList} ->
+                    {value, Fun, _} = erl_eval:expr( hd(ExprList), []),
+                    {ok, Fun};
+                {error, ErrorInfo} ->
+                    {erl_parse_error, {error, ErrorInfo}}
+            end;
+        {error, ErrorInfo, ErrorLocation} ->
+            {error, ErrorInfo, ErrorLocation}
+    end;
 normalise_erlang_term(V, erl_string) ->
     case erl_scan:string(binary_to_list(V) ++ ".") of
         {ok, Tokens, _EndLocation} ->
@@ -29,21 +44,15 @@ normalise_erlang_term(V, erl_string) ->
                 {ok, ExprList} ->
                     %% NB!
                     %% Only handling first/one statement ( hd/1 ) !!!
-                    erl_parse:normalise( hd(ExprList) );
+                    {ok, erl_parse:normalise(hd(ExprList))};
                 {error, ErrorInfo} ->
                     {erl_parse_error, {error, ErrorInfo}}
             end;
         {error, ErrorInfo, ErrorLocation} ->
             {error, ErrorInfo, ErrorLocation}
     end;
-normalise_erlang_term(V, <<"atom">>) ->
-    list_to_atom(binary_to_list(V));
-normalise_erlang_term(V, <<"binary_string">>) ->
-    V;
-normalise_erlang_term(V, <<"integer">>) ->
-    list_to_integer(binary_to_list(V));
-normalise_erlang_term(V, <<"pid">>) when is_binary(V) ->
-    list_to_pid(binary_to_list(V)).
+normalise_erlang_term(V, pid) when is_binary(V) ->
+    {ok, list_to_pid(binary_to_list(V))}.
 
 json_sanitize(V) when is_atom(V) ->
     V;
@@ -90,10 +99,10 @@ default_pagesize() ->
     case application:get_env(ets_ui, default_page_size, {default, 20}) of
         {default, X} ->
             X;
-        X when is_integer(X) andalso X =< 10000 ->
+        X when is_integer(X) andalso X =< 1000 ->
             X;
-        X when is_integer(X) andalso X > 10000 ->
-            10000; %% Limit to 10K
+        X when is_integer(X) andalso X > 1000 ->
+            1000; %% Limit to 10K
         _X -> % when fails...
             20
     end.

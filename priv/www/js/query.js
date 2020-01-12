@@ -65,6 +65,22 @@ function match(){
     }
 }
 
+function fun_to_ms(){
+    var query_type = "fun_to_ms";
+    var table = getUrlParameter('table');
+    var fun_to_ms = $('#fun_to_ms').val();
+    var pagesize = $('#pagesize').val();
+    if( fun_to_ms != '' && fun_to_ms != '' ){
+        localStorage.setItem('ets_ui_query_type', query_type);
+        var query_portion =
+        'table='+encodeURIComponent(table)+
+        '&fun_str='+encodeURIComponent(fun_to_ms)+
+        '&query_type='+query_type+
+        '&pagesize='+pagesize;
+        do_query(query_portion);
+    }
+}
+
 function next() {
     var table = getUrlParameter('table');
     var query_portion = 'table='+encodeURIComponent(table);
@@ -74,24 +90,38 @@ function next() {
     console.log('continuation to use for next() '+ continuation);
     var pagesize = $('#pagesize').val();
     // Query Type
-    if (local_storage_query_type == 'page' ){
-        if( continuation != null ){
-            query_portion +=
-                '&continuation='+encodeURIComponent(continuation)+
-                "&pagesize="+pagesize+
-                '&query_type=page';
-            do_query(query_portion);
-        }
-    } else if ( local_storage_query_type == 'match_object') {
-        if( continuation != null ){
-            query_portion +=
-                '&continuation='+encodeURIComponent(continuation)+
-                "&pagesize="+pagesize+
-                '&query_type=match_object';
-            do_query(query_portion);
-        }
+    if( continuation != null ){
+        query_portion +=
+            '&continuation='+encodeURIComponent(continuation)+
+            "&pagesize="+pagesize+
+            '&query_type='+local_storage_query_type;
+        do_query(query_portion);
     }
-
+    // if (local_storage_query_type == 'page' ){
+    //     if( continuation != null ){
+    //         query_portion +=
+    //             '&continuation='+encodeURIComponent(continuation)+
+    //             "&pagesize="+pagesize+
+    //             '&query_type='+local_storage_query_type;
+    //         do_query(query_portion);
+    //     }
+    // } else if ( local_storage_query_type == 'match_object') {
+    //     if( continuation != null ){
+    //         query_portion +=
+    //             '&continuation='+encodeURIComponent(continuation)+
+    //             "&pagesize="+pagesize+
+    //             '&query_type='+local_storage_query_type;
+    //         do_query(query_portion);
+    //     }
+    // } else if ( local_storage_query_type == 'fun_to_ms') {
+    //     if( continuation != null ){
+    //         query_portion +=
+    //             '&continuation='+encodeURIComponent(continuation)+
+    //             "&pagesize="+pagesize+
+    //             '&query_type='+local_storage_query_type;
+    //         do_query(query_portion);
+    //     }
+    // }
 }
 
 function fetch(){
@@ -100,7 +130,7 @@ function fetch(){
     $('#ets_key').val(null);
     $('#match_object_spec').val(null);
     $('#match_spec').val(null);
-    $('#ms_value').val(null);
+    $('#fun_to_ms').val(null);
     do_page_query(table);
 }
 
@@ -142,13 +172,13 @@ function get_results_and_rehighlight_results(data) {
     } else {
         $('#next').attr('class', 'btn btn-primary');
     }
-    console.log('received continuation ' + data.continuation);
-    console.log('received '+data.rows.length+' rows ');
+    // console.log('received '+data.rows.length+' rows ');
     if( data.continuation == undefined ){
         console.log('clear continuation');
         localStorage.removeItem('ets_ui_continuation');
         $('#next').attr('class', 'btn btn-secondary');
     } else {
+        console.log('received continuation ' + data.continuation);
         localStorage.setItem('ets_ui_continuation', data.continuation);
         $('#next').attr('class', 'btn btn-primary');
     }
@@ -197,7 +227,9 @@ $("#match_btn").click(function(){
     match();
 });
 
-// $("match")
+$("#fun_to_ms_btn").click(function(){
+    fun_to_ms();
+});
 
 $("#next").click(function(){
     next();

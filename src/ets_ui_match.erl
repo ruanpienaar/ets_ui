@@ -25,9 +25,13 @@
 %             ignore |
 %             {error, Error :: term()}.
 start_link(MatchFunc, Table, MatchSpec, Limit)
-        when ( MatchFunc == match_object orelse MatchFunc == match ) andalso
+        when ( MatchFunc == match_object orelse
+               MatchFunc == match orelse
+               MatchFunc == fun_to_ms ) andalso
              is_atom(Table) andalso
-             (is_atom(MatchSpec) orelse is_tuple(MatchSpec)) andalso
+             (is_atom(MatchSpec) orelse
+              is_tuple(MatchSpec) orelse
+              is_function(MatchSpec)) andalso
              is_integer(Limit) ->
     gen_statem:start_link(?MODULE, {MatchFunc, Table, MatchSpec, Limit}, []).
 
@@ -43,6 +47,13 @@ callback_mode() ->
 
 % -spec init(Args :: term()) ->
 %           gen_statem:init_result(term()).
+init({MatchFunc = fun_to_ms, Table, Fun, Limit}) ->
+    {ok, alive, #{
+        match_function => MatchFunc,
+        table => Table,
+        limit => Limit,
+        compiled_match_spec => ets:fun2ms(Fun)
+    }, [{state_timeout, expiry_time(), expired}]};
 init({MatchFunc, Table, MatchSpec, Limit}) ->
     {ok, alive, #{
         match_function => MatchFunc,
@@ -66,12 +77,26 @@ alive(state_timeout, expired, Data) ->
     {stop, normal};
 alive({call, From}, get_more, #{
         continuation := Continuation,
+        match_function := fun_to_ms = MatchFunc,
+        table := _Table,
+        limit := _Limit } = Data) when Continuation =/= undefined ->
+    try_do_ets_match_or_stop(
+        MatchFunc, From, Data, {Continuation});
+alive({call, From}, get_more, #{
+        continuation := Continuation,
         match_function := MatchFunc,
         table := _Table,
         match_spec := _MatchSpec,
         limit := _Limit } = Data) when Continuation =/= undefined ->
     try_do_ets_match_or_stop(
         MatchFunc, From, Data, {Continuation});
+alive({call, From}, get_more, #{
+        match_function := fun_to_ms = MatchFunc,
+        table := Table,
+        limit := Limit,
+        compiled_match_spec := CompiledMatchSpec } = Data) ->
+    try_do_ets_match_or_stop(
+        MatchFunc, From, Data, {Table, CompiledMatchSpec, Limit});
 alive({call, From}, get_more, #{
         match_function := MatchFunc,
         table := Table,
@@ -126,7 +151,11 @@ match_function(match_object, {Table, MatchSpec, Limit}) ->
 match_function(match, {Continuation}) ->
     ets:match(Continuation);
 match_function(match, {Table, MatchSpec, Limit}) ->
-    ets:match(Table, MatchSpec, Limit).
+    ets:match(Table, MatchSpec, Limit);
+match_function(fun_to_ms, {Continuation}) ->
+    ets:select(Continuation);
+match_function(fun_to_ms, {Table, CompiledMatchSpec, Limit}) ->
+    ets:select(Table, CompiledMatchSpec, Limit).
 
 expiry_time() ->
     application:get_env(

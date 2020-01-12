@@ -49,10 +49,10 @@ parse_query_string_into_map(Req) ->
          {key, [], undefined},
          {value, [], undefined},
          {continuation, [], undefined},
-         % {continuation_type, [], <<"key">>}, %% <<"key">> | <<"pid">>
          {pagesize, int, ets_ui_common:default_pagesize()},
          {tuple_wildcard, [fun(_, TupleWildCardBinStr) -> check_tuplwwildcard(TupleWildCardBinStr) end], undefined},
-         {query_type, [], <<"page">>} % <<"page">> | <<"lookup">> | <<"match_object">>
+         {query_type, [], <<"page">>}, %% TODO: Change to be nonempty... <<"page">> | <<"lookup">> | <<"match_object">> | <<"fun_to_ms">>
+         {fun_str, [fun(_, FunBinStr) -> check_match_fun(FunBinStr) end], undefined}
         ],
         Req
     ).
@@ -97,25 +97,6 @@ is_table_ref(Table) ->
             true
     end.
 
-check_tuplwwildcard(TupleWildCardBinStr) ->
-    case TupleWildCardBinStr /= undefined of
-        true ->
-            case
-                ets_ui_common:normalise_erlang_term(
-                    TupleWildCardBinStr,
-                    erl_string
-                )
-            of
-                MatchSpec when is_atom(MatchSpec) orelse
-                               is_tuple(MatchSpec) ->
-                    {ok, MatchSpec};
-                _ ->
-                    {error, bad_match_spec}
-            end;
-        false ->
-            {ok, undefined}
-    end.
-
 %% @doc
 %% Bag tables break the lookup by key, since a table might have thousands/milions of records with the same key
 %% and therefore doing a lookup might cause harm to the running node.
@@ -136,29 +117,67 @@ suitable_table(TableInfo) ->
             true
     end.
 
+check_tuplwwildcard(TupleWildCardBinStr) ->
+    case TupleWildCardBinStr /= undefined of
+        true ->
+            case
+                ets_ui_common:normalise_erlang_term(
+                    TupleWildCardBinStr,
+                    erl_string
+                )
+            of
+                {ok, MatchSpec} when is_atom(MatchSpec) orelse
+                                     is_tuple(MatchSpec) ->
+                    {ok, MatchSpec};
+                _ ->
+                    {error, bad_match_spec}
+            end;
+        false ->
+            {ok, undefined}
+    end.
+
+check_match_fun(FunBinStr) ->
+    case ets_ui_common:normalise_erlang_term(FunBinStr, erl_fun_string) of
+        {ok, Fun} ->
+            {ok, Fun};
+        Error ->
+            Error
+    end.
+
 %% Match object / Match
 handle_request(
         #{
             tuple_wildcard := MatchSpec,
             continuation := Continuation, %% This is the PID used to lookup entries (ets_ui_match.erl)
             pagesize := PageSize,
-            query_type := QueryType
+            query_type := QueryType,
+            fun_str := Fun
         },
         #{
             table := Table,
             table_info := TableInfo
         } = _StateMap)
             when QueryType == <<"match_object">> orelse
-                 QueryType == <<"match">> ->
+                 QueryType == <<"match">> orelse
+                 QueryType == <<"fun_to_ms">> ->
+
+    MatchSpecToUse =
+        case QueryType of
+            <<"fun_to_ms">> ->
+                Fun;
+            _ ->
+                MatchSpec
+        end,
+
     {Objects, NextContinuation} =
-        case Continuation == undefined andalso MatchSpec =/= undefined of
+        case Continuation == undefined andalso MatchSpecToUse =/= undefined of
             true ->
                 {ok, ContinuationPid} = ets_ui_match:start_link(
-                    list_to_existing_atom(binary_to_list(QueryType)), Table, MatchSpec, PageSize),
+                    list_to_existing_atom(binary_to_list(QueryType)), Table, MatchSpecToUse, PageSize),
                 {ok, MoreObjects} = ets_ui_match:get_more(ContinuationPid),
                 {MoreObjects, ContinuationPid};
             false ->
-                ParsedContinuationPid = ets_ui_common:normalise_erlang_term(Continuation, <<"pid">>),
+                {ok, ParsedContinuationPid} = ets_ui_common:normalise_erlang_term(Continuation, pid),
                 {ok, MoreObjects} = ets_ui_match:get_more(ParsedContinuationPid),
                 {MoreObjects, Continuation}
         end,
@@ -190,7 +209,7 @@ handle_request(
                     normalised_key => ParseReason
                 }),
                 {400, jsx:encode(#{<<"responseText">> => ets_ui_common:term_to_bin_string({error, ParseReason})})};
-            NKey ->
+            {ok, NKey} ->
                 ?LOG_DEBUG(#{
                     step => parsed_key,
                     normalised_key => NKey
@@ -222,27 +241,60 @@ handle_request(
             table := Table,
             table_info := TableInfo
         } = _StateMap) ->
-        ResponseMap1 =
-            case Continuation of
-                undefined ->
-                    get_next_n_objects(Table, undefined, PageSize);
-                _ ->
-                    ErlTermContinuation =
-                        ets_ui_common:normalise_erlang_term(Continuation, erl_string),
-                    get_next_n_objects(Table, ErlTermContinuation, PageSize)
-            end,
-        {keypos, KeyPos} = proplists:lookup(keypos, TableInfo),
-        RowsDisplay = json_rows(KeyPos, maps:get(entries, ResponseMap1)),
-        ResponseMap2 =
-            case maps:is_key(continuation, ResponseMap1) of
-                true ->
-                    NextContinuation = maps:get(continuation, ResponseMap1),
-                    #{continuation => ets_ui_common:term_to_bin_string(NextContinuation)};
-                false ->
-                    #{}
-            end,
-        Json = jsx:encode(maps:merge(RowsDisplay, ResponseMap2)),
-        {200, Json}.
+    ResponseMap1 =
+        case Continuation of
+            undefined ->
+                get_next_n_objects(Table, undefined, PageSize);
+            _ ->
+                {ok, ErlTermContinuation} =
+                    ets_ui_common:normalise_erlang_term(Continuation, erl_string),
+                get_next_n_objects(Table, ErlTermContinuation, PageSize)
+        end,
+    {keypos, KeyPos} = proplists:lookup(keypos, TableInfo),
+    RowsDisplay = json_rows(KeyPos, maps:get(entries, ResponseMap1)),
+    ResponseMap2 =
+        case maps:is_key(continuation, ResponseMap1) of
+            true ->
+                NextContinuation = maps:get(continuation, ResponseMap1),
+                #{continuation => ets_ui_common:term_to_bin_string(NextContinuation)};
+            false ->
+                #{}
+        end,
+    Json = jsx:encode(maps:merge(RowsDisplay, ResponseMap2)),
+    {200, Json}.
+%% fun to matchspec
+% handle_request(
+%         #{
+%             continuation := Continuation,
+%             pagesize := PageSize,
+%             fun_str := Fun,
+%             query_type := <<"fun_to_ms">>
+%         },
+%         #{
+%             table := Table,
+%             table_info := TableInfo
+%         } = _StateMap) ->
+
+%     case Continuation of
+%         undefined ->
+%             ok;
+%         _ ->
+%             ok
+%     end,
+
+%     % MatchSpec = ets:fun2ms(Fun),
+
+%     %% TODO: Move to ets_ui_match.erl
+%     % {Results, NewContinuation} = ets:select(Table, MatchSpec, PageSize),
+
+%     ?LOG_DEBUG(#{
+%         step => match_spec_select,
+%         result => Results
+%     }),
+%     {keypos, KeyPos} = proplists:lookup(keypos, TableInfo),
+%     RowsDisplay = json_rows(KeyPos, Results),
+%     Json = jsx:encode(RowsDisplay),
+%     {200, Json}.
 
 json_rows(KeyPos, Entries) ->
     json_rows(KeyPos, Entries, []).

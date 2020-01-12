@@ -22,6 +22,7 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
+    create_atoms(),
     set_otp_version(),
     {ok,
         {
@@ -52,3 +53,6 @@ set_otp_version() ->
     ),
     OtpVersion = hd(binary:split(VsnString, <<"\n">>)),
     ok = application:set_env(ets_ui, otp_version, OtpVersion).
+
+create_atoms() ->
+    [fun_to_ms].

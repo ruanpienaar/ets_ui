@@ -19,9 +19,10 @@
 init(Req, State) ->
     % erlang:display(Req),
     % erlang:display(cowboy_req:parse_header(<<"if-match">>, Req)),
-    Table = cowboy_req:binding(table, Req),
+    TableBinStr = cowboy_req:binding(table, Req),
+    {ok, Table} = ets_ui_common:normalise_erlang_term(TableBinStr, known_atom),
     {cowboy_rest, Req, State#{
-        table => ets_ui_common:normalise_erlang_term(Table, known_atom)
+        table => Table
     }}.
 
 known_methods(Req, State) ->
