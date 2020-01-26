@@ -48,6 +48,7 @@ http_unit_test_() ->
 api_table_info(_TestString, AssignedPort) ->
     TableInfoResp =
         erlang_testing_web:url_req(
+            get,
             build_table_info_url(AssignedPort, http_test_table_1)
         ),
     ?assertMatch(

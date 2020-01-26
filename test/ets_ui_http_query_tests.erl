@@ -1354,7 +1354,7 @@ api_page_entries_no_results(_TestString, AssignedPort) ->
     %% TODO: use the eunit ifdef macro to enable/disable logging
 
     %% Query empty table
-    W = erlang_testing_web:url_req("http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=http_test_table_1"),
+    W = erlang_testing_web:url_req(get, "http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=http_test_table_1"),
     % ?debugFmt("W ~p\n", [W]),
     ?assertMatch(
         {ok,{200,
@@ -1383,7 +1383,7 @@ api_page_entries_one_result(_TestString, AssignedPort) ->
     ?assert( 1 =:= ets:info(http_test_table_1, size) ),
 
     %% Query table with 1 entry
-    X = erlang_testing_web:url_req("http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=http_test_table_1"),
+    X = erlang_testing_web:url_req(get, "http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=http_test_table_1"),
     ?debugFmt("X ~p\n", [X]),
     ?assertMatch(
         {ok,{200,
@@ -1419,7 +1419,7 @@ api_page_entries_lots_results(_TestString, AssignedPort) ->
     %% [setup] Insert some more!!!
     [ true = ets:insert(http_test_table_1, {N, N}) || N <- lists:seq(2, 1000) ],
 
-    Y = erlang_testing_web:url_req("http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=http_test_table_1"),
+    Y = erlang_testing_web:url_req(get, "http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=http_test_table_1"),
     % ?debugFmt("Y ~p\n", [Y]),
     ?assertMatch(
         {ok,{200,
@@ -1482,7 +1482,7 @@ api_page_entries_lots_results(_TestString, AssignedPort) ->
 api_page_entries_with_continuation(_TestString, AssignedPort) ->
     [ true = ets:insert(http_test_table_1, {N, N}) || N <- lists:seq(1, 1000) ],
 
-    Z = erlang_testing_web:url_req("http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=http_test_table_1&pagesize=3"),
+    Z = erlang_testing_web:url_req(get, "http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=http_test_table_1&pagesize=3"),
     % ?debugFmt("~p\n", [Z]),
     ?assertMatch(
       {ok,{200,
@@ -1520,7 +1520,7 @@ api_page_entries_with_continuation(_TestString, AssignedPort) ->
         jsx:decode(ZBody, [return_maps])
     ),
 
-    AB = erlang_testing_web:url_req("http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=http_test_table_1&pagesize=3&continuation=4&key_type=integer"),
+    AB = erlang_testing_web:url_req(get, "http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=http_test_table_1&pagesize=3&continuation=4&key_type=integer"),
     % ?debugFmt("AB ~p\n", [AB]),
     ?assertMatch(
       {ok,{200,
@@ -1549,7 +1549,7 @@ api_page_entries_with_continuation(_TestString, AssignedPort) ->
 
 api_match_object(_TestString, AssignedPort) ->
     [ true = ets:insert(http_test_table_1, {N, N}) || N <- lists:seq(1, 1000) ],
-    Z1 = erlang_testing_web:url_req("http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=http_test_table_1&tuple_wildcard=%27_%27&pagesize=5"),
+    Z1 = erlang_testing_web:url_req(get, "http://localhost:"++integer_to_list(AssignedPort)++"/api/query?table=http_test_table_1&tuple_wildcard=%27_%27&pagesize=5"),
     ?debugFmt("Z1 ~p\n", [Z1]),
     ?assertMatch(
       {ok,{200,
