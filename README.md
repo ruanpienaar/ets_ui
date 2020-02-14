@@ -15,7 +15,8 @@ or lets the underlying OS decide what port to use IE: use any unused port.
 
 To create a few tables with some example context run the following:
 
-```ets_ui_util:dummy_table().
+```
+ets_ui_util:dummy_table().
 ```
 
 or just create ETS tables yourself and play around on the ui
@@ -30,7 +31,8 @@ cluster mode runs queries on it's child client-mode machines
 
 ## Installation
 
-```make shell
+```
+make shell
 ```
 
 ## API Reference
@@ -39,7 +41,8 @@ cluster mode runs queries on it's child client-mode machines
 
 ## Tests
 
-```make test
+```
+make test
 ```
 
 ## Contributors
