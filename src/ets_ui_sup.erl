@@ -15,13 +15,27 @@
 %% ===================================================================
 
 start_link() ->
-    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+    supervisor:start_link({local, ?MODULE}, ?MODULE, ets_ui_common:mode()).
 
 %% ===================================================================
 %% Supervisor callbacks
 %% ===================================================================
 
-init([]) ->
+init(meta) ->
+    {ok,
+        {
+            #{
+                strategy  => one_for_one, % optional
+                intensity => 1,           % optional
+                period    => 10           % optional
+            },
+            [
+                ets_ui_common:supervisor(ets_ui_meta_node_sup, ets_ui_meta_node_sup, start_link, []),
+                ets_ui_common:worker(webserver_child, ets_ui_http, start_link, [])
+            ]
+        }
+    };
+init(client) ->
     create_atoms(),
     set_otp_version(),
     {ok,
@@ -32,14 +46,7 @@ init([]) ->
                 period    => 10           % optional
             },
             [
-                #{
-                    id       => webserver_child,               % mandatory
-                    start    => {ets_ui_http, start_link, []}, % mandatory
-                    restart  => permanent,                     % optional
-                    shutdown => brutal_kill,                   % optional
-                    type     => worker,                        % optional
-                    modules  => [ets_ui_http]                  % optional
-                }
+                ets_ui_common:worker(webserver_child, ets_ui_http, start_link, [])
             ]
         }
     }.

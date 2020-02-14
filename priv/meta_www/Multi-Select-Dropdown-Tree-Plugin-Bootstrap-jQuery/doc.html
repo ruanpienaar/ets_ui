@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+
+<title>
+Dropdown Tree
+</title>
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
+<link rel="stylesheet" href="dropdowntree.css">
+
+</head>
+<body>
+
+	<a href="https://github.com/JosephSKh" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
+
+<div class="container">
+<h1>Dropdown Tree</h1>
+<div class="col-md-6">
+<hr/>
+<h3>Basic Example:</h3><div class="dropdown dropdown-tree" id="firstDropDownTree2"></div>
+<h3>Children Select:</h3><div class="dropdown dropdown-tree" id="firstDropDownTree"></div>
+<h3>Add Children:</h3><div class="dropdown dropdown-tree" id="firstDropDownTree3"></div>
+<h3>RTL:</h3><div class="dropdown dropdown-tree" id="firstDropDownTree4"></div>
+</div>
+
+<div class="col-md-6">
+
+<h2>Init:</h2>
+
+<h3>HTML:</h3>
+<pre>
+<code>
+&lt;div class="dropdown dropdown-tree" id="firstDropDownTree"&gt;&lt;/div&gt;
+</code>
+</pre>
+
+<h3>JavaScript:</h3>
+<pre>
+<code>
+var arr=[
+{title:1,dataAttrs:[{title:"dataattr1",data:"value1"},{title:"dataattr2",data:"value2"},{title:"dataattr3",data:"value3"}]},
+{title:2,dataAttrs:[{title:"dataattr4",data:"value4"},{title:"dataattr5",data:"value5"},{title:"dataattr6",data:"value6"}]},
+{title:3,dataAttrs:[{title:"dataattr7",data:"value7"},{title:"dataattr8",data:"value8"},{title:"dataattr9",data:"value9"}]}
+];
+
+var options = {
+    title : "DropDown Tree",
+    data: arr,
+    clickHandler: function(element){
+        console.log(element);
+    },
+}
+
+$("#firstDropDownTree").DropDownTree(options);
+</code>
+</pre>
+</div>
+<hr/>
+<h2>Properties:</h2>
+
+<table class="table table-stripped table-bordered">
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Default Value</th>
+<th>Effect</th>
+</tr>
+
+<tr>
+<td>title</td>
+<td>string</td>
+<td>Dropdown</td>
+<td>The title of the dropdown</td>
+</tr>
+
+<tr>
+<td>clickHandler</td>
+<td>function</td>
+<td>null</td>
+<td>Function which will be passed and handle an element click, pass a element variable and this will return the clicked element</td>
+</tr>
+
+<tr>
+<td>checkHandler</td>
+<td>function</td>
+<td>null</td>
+<td>Function which will be passed and handle an element check, pass a element variable and this will return the clicked element, the second parameter is a bool which will tell the checked status</td>
+</tr>
+
+<tr>
+<td>expandHandler</td>
+<td>function</td>
+<td>null</td>
+<td>Function which will be passed and handle an element expand, pass a element variable and this will return the clicked element, the second parameter is a bool which will tell the expand status</td>
+</tr>
+
+<tr>
+<td>maxHeight </td>
+<td>int</td>
+<td>300</td>
+<td>The maximum height of the dropdown ul</td>
+</tr>
+
+<tr>
+<td>closedArrow</td>
+<td>string</td>
+<td>null</td>
+<td>The array of data which will be passed to the dropdown</td>
+</tr>
+
+<tr>
+<td>closedArrow </td>
+<td>html string</td>
+<td>&lt;i class="fa fa-caret-right" aria-hidden="true"&gt;&lt;/i&gt;</td>
+<td>if a li has a sub menu this will be the icon of the closed arrow when closed .. defaults to font awesome</td>
+</tr>
+
+<tr>
+<td>openedArrow </td>
+<td>html string</td>
+<td>&lt;i class="fa fa-caret-down" aria-hidden="true"&gt;&lt;/i&gt;</td>
+<td>if a li has a sub menu this will be the icon of the opened arrow when opened</td>
+</tr>
+
+<tr>
+<td>multiSelect </td>
+<td>boolean</td>
+<td>false</td>
+<td>adds checkboxes and allows multi selection for multi elements in the dropdown</td>
+</tr>
+
+<tr>
+<td>selectChildren</td>
+<td>boolean</td>
+<td>false</td>
+<td>will check all children of the selected parent</td>
+</tr>
+
+<tr>
+<td>addChildren</td>
+<td>boolean</td>
+<td>false</td>
+<td>will tell the plugin if that the children are dynamic .. defaults to false .. set to true if you will use AddChildren()</td>
+</tr>
+
+<tr>
+<td>rtl</td>
+<td>boolean</td>
+<td>false</td>
+<td>will tell the plugin if the page is RTL .. defaults to `false` .. you need to add rtl-bootstrap as well</td>
+</tr>
+
+</table>
+
+</div>
+
+<script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+<script src="dropdowntree.js"></script>
+
+
+<script>
+
+/////////////////////////// normal user code
+
+var arr4=[
+{title:"St Fatima",href:"#1",dataAttrs:[{title:"dataattr1",data:"value1"},{title:"dataattr2",data:"value2"},{title:"dataattr3",data:"value3"}]}
+,
+{title:"Korba",href:"#2",dataAttrs:[{title:"dataattr4",data:"value4"},{title:"dataattr5",data:"value5"},{title:"dataattr6",data:"value6"}]}
+,
+{title:"Roxi",href:"#3",dataAttrs:[{title:"dataattr7",data:"value7"},{title:"dataattr8",data:"value8"},{title:"dataattr9",data:"value9"}]}
+];
+
+var arr3=[
+{title:"Abbas Al Akkad",href:"#1",dataAttrs:[{title:"dataattr1",data:"value1"},{title:"dataattr2",data:"value2"},{title:"dataattr3",data:"value3"}]}
+,
+{title:"Makram Obeid",href:"#2",dataAttrs:[{title:"dataattr4",data:"value4"},{title:"dataattr5",data:"value5"},{title:"dataattr6",data:"value6"}],data:arr4}
+,
+{title:"Mostafa Al Nahas",href:"#3",dataAttrs:[{title:"dataattr7",data:"value7"},{title:"dataattr8",data:"value8"},{title:"dataattr9",data:"value9"}]}
+];
+
+var arr2=[
+{title:"Teriumph",href:"#1",dataAttrs:[{title:"dataattr1",data:"value1"},{title:"dataattr2",data:"value2"},{title:"dataattr3",data:"value3"}] ,data:arr3}
+,
+{title:"Safir",href:"#2",dataAttrs:[{title:"dataattr4",data:"value4"},{title:"dataattr5",data:"value5"},{title:"dataattr6",data:"value6"}]}
+,
+{title:"El-Hegaz Sq",href:"#3",dataAttrs:[{title:"dataattr7",data:"value7"},{title:"dataattr8",data:"value8"},{title:"dataattr9",data:"value9"}]}
+];
+
+
+
+var arr=[
+{title:"Heliopolis",href:"#1",dataAttrs:[{title:"dataattr1",data:"value1"},{title:"dataattr2",data:"value2"},{title:"dataattr3",data:"value3"}], data: arr2}
+,
+{title:"Nasr City",href:"#2",dataAttrs:[{title:"dataattr4",data:"value4"},{title:"dataattr5",data:"value5"},{title:"dataattr6",data:"value6"}]}
+,
+{title:"Down Town",href:"#3",dataAttrs:[{title:"dataattr7",data:"value7"},{title:"dataattr8",data:"value8"},{title:"dataattr9",data:"value9"}],data:arr3}
+];
+
+var options = {
+	title : "Areas 2",
+	data: arr,
+	maxHeight: 300,
+	clickHandler: function(element){
+		//gets clicked element parents
+		console.log($(element).GetParents());
+		//element is the clicked element
+		console.log(element);
+		$("#firstDropDownTree").SetTitle($(element).find("a").first().text());
+		console.log("Selected Elements",$("#firstDropDownTree").GetSelected());
+	},
+	expandHandler: function(element,expanded){
+		console.log("expand",element,expanded);
+	},
+	checkHandler: function(element,checked){
+		console.log("check",element,checked);
+	},
+	closedArrow: '<i class="fa fa-caret-right" aria-hidden="true"></i>',
+	openedArrow: '<i class="fa fa-caret-down" aria-hidden="true"></i>',
+	multiSelect: true,
+	selectChildren: true,
+}
+
+$("#firstDropDownTree").DropDownTree(options);
+
+
+
+
+var options2 = {
+	title : "Areas 1",
+	data: arr3,
+	maxHeight: 3000,
+	clickHandler: function(element){
+				//gets clicked element parents
+		console.log($(element).GetParents());
+		//element is the clicked element
+		console.log(element);
+		$("#firstDropDownTree2").SetTitle($(element).find("a").first().text());
+		console.log("Selected Elements",$("#firstDropDownTree2").GetSelected());
+	},
+	closedArrow: '<i class="fa fa-caret-right" aria-hidden="true"></i>',
+	openedArrow: '<i class="fa fa-caret-down" aria-hidden="true"></i>',
+	multiSelect: true,
+}
+
+
+$("#firstDropDownTree2").DropDownTree(options2);
+
+
+var options3 = {
+	title : "Areas 3",
+	data: arr3,
+	maxHeight: 300,
+	expandHandler: function(element, expanded){
+		if(expanded){
+			$("#firstDropDownTree3").AddChildren(element, arr3);
+		}
+	},
+	closedArrow: '<i class="fa fa-caret-right" aria-hidden="true"></i>',
+	openedArrow: '<i class="fa fa-caret-down" aria-hidden="true"></i>',
+	selectChildren: true,
+	multiSelect: true,
+	addChildren: true,
+}
+
+
+$("#firstDropDownTree3").DropDownTree(options3);
+
+
+
+var arr6=[
+{title:"مصر الجديدة",href:"#1",dataAttrs:[{title:"dataattr1",data:"value1"},{title:"dataattr2",data:"value2"},{title:"dataattr3",data:"value3"}]}
+,
+{title:"مدينة نصر",href:"#2",dataAttrs:[{title:"dataattr4",data:"value4"},{title:"dataattr5",data:"value5"},{title:"dataattr6",data:"value6"}]}
+,
+{title:"العباسية",href:"#3",dataAttrs:[{title:"dataattr7",data:"value7"},{title:"dataattr8",data:"value8"},{title:"dataattr9",data:"value9"}]}
+];
+
+var arr5=[
+{title:"القاهرة",href:"#1",dataAttrs:[{title:"dataattr1",data:"value1"},{title:"dataattr2",data:"value2"},{title:"dataattr3",data:"value3"}], data: arr6}
+,
+{title:"الجيزة",href:"#2",dataAttrs:[{title:"dataattr4",data:"value4"},{title:"dataattr5",data:"value5"},{title:"dataattr6",data:"value6"}]}
+,
+{title:"الأسكندرية",href:"#3",dataAttrs:[{title:"dataattr7",data:"value7"},{title:"dataattr8",data:"value8"},{title:"dataattr9",data:"value9"}]}
+];
+
+var options4 = {
+	title : "المناطق 4",
+	data: arr5,
+	maxHeight: 300,
+	closedArrow: '<i class="fa fa-caret-right" aria-hidden="true"></i>',
+	openedArrow: '<i class="fa fa-caret-down" aria-hidden="true"></i>',
+	selectChildren: true,
+	multiSelect: true,
+	rtl :true,
+	clickHandler: function(element){
+		//gets clicked element parents
+		console.log($(element).GetParents());
+		//element is the clicked element
+		console.log(element);
+		$("#firstDropDownTree4").SetTitle($(element).find("a").first().text());
+		console.log("Selected Elements",$("#firstDropDownTree4").GetSelected());
+	},
+}
+
+$("#firstDropDownTree4").DropDownTree(options4);
+
+
+</script>
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-81901172-2', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+
+</body>
+</html>

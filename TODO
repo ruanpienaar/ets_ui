@@ -6,11 +6,11 @@
     38
     17> erlang:system_info(ets_limit).
     8192
-☐ Run ranch server on port 0 - 2> ranch_server:get_addr(ets_ui_http).
+✔ Run ranch server on port 0 - 2> ranch_server:get_addr(ets_ui_http). @done (20-02-14 08:32)
   {{0,0,0,0},42587}
 ☐ make a "use this key" button under each row, to fill in the key in the search textbox
 ☐ create functionality for going back on pages
-☐ don't have to reverse results, reads a bit weird on page
+✔ don't have to reverse results, reads a bit weird on page @done (20-02-14 08:33)
 
 each field needs a data type, so that people can see whether a field was a string or atom
 since the match_object will need a data type...
@@ -20,5 +20,5 @@ since the match_object will need a data type...
    Key = 'abc' + ( 3 x '_' ) = {'abc', '_', '_', '_'}
  ☐ build a syntax checker for the inputs...
  ☐ Create joining functionality on page. join.html with join backend
- ☐ use erlang records as entries with keypos == 2, and add version numbers to records
+ ✔ use erlang records as entries with keypos == 2, and add version numbers to records @done (20-02-14 08:33)
  ☐ lookup with bad syntax causes a http 400 reseponse, but nothing shows up on the page

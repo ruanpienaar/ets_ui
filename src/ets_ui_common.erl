@@ -10,7 +10,10 @@
     term_to_bin_string/1,
     create_reply/4,
     create_reply/5,
-    default_pagesize/0
+    default_pagesize/0,
+    worker/4,
+    supervisor/4,
+    mode/0
 ]).
 
 %% I've used the binary strings, as type indicators as they're sent
@@ -106,3 +109,24 @@ default_pagesize() ->
         _X -> % when fails...
             20
     end.
+
+
+worker(Id, M, F, A) ->
+    child(Id, M, F, A, worker).
+
+supervisor(Id, M, F, A) ->
+    child(Id, M, F, A, supervisor).
+
+child(Id, M, F, A, Type) ->
+    #{
+        id       => Id,          % mandatory
+        start    => {M, F, A},   % mandatory
+        restart  => permanent,   % optional
+        shutdown => brutal_kill, % optional
+        type     => Type,        % optional
+        modules  => [M]          % optional
+    }.
+
+-spec mode() -> client | meta.
+mode() ->
+    application:get_env(ets_ui, mode, client).

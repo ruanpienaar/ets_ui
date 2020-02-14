@@ -1,8 +1,7 @@
 [
     { ets_ui, [
-        {mode, meta}, %% meta | client
-	{meta_nodes, [{"localhost", 54321}]},
-        {http_port, 14321}
+	{mode, client},
+        {http_port, 54321}
     ] },
 
     {kernel, [

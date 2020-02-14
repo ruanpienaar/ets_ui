@@ -14,17 +14,21 @@ start_link() ->
     {ok, Pid}.
 
 cowboy_startup() ->
+    ModeRoutes = case ets_ui_common:mode() of
+        client ->
+            client_routes();
+        meta ->
+            meta_routes()
+    end,
     Routes = [
-        {'_', routes()}
+        {'_', ModeRoutes}
     ],
-    Dispatch = cowboy_router:compile(Routes),
-    Port = application:get_env(ets_ui, http_port, 0), % 54321),
     {ok, RanchPid} = cowboy:start_clear(
         ?MODULE,
-        [{port, Port}],
+        [{port, application:get_env(ets_ui, http_port, 0)}],
         #{
             env => #{
-                dispatch => Dispatch
+                dispatch => cowboy_router:compile(Routes)
             }
         }
     ),
@@ -40,9 +44,11 @@ cowboy_startup() ->
     logger:warning("!\n\nCowboy started on port ~p\n\n!", [UsedPort]),
     {ok, RanchPid}.
 
-% -spec routes() -> list({term(), atom(), term()}).
-routes() ->
+% -spec client_routes() -> list({term(), atom(), term()}).
+client_routes() ->
     [
+        {"/ping",
+            ets_ui_http_ping, #{}},
         {"/help",
             ets_ui_http_help, #{}},
         {"/api/tables",
@@ -57,4 +63,14 @@ routes() ->
             cowboy_static, {priv_file, ets_ui, "www/index.html"}},
         {"/[...]",
             cowboy_static, {priv_dir, ets_ui, "www/"}}
+    ].
+
+meta_routes() ->
+    [
+        {"/api/nodes",
+            ets_ui_meta_http_nodes, #{}},
+        {"/",
+            cowboy_static, {priv_file, ets_ui, "meta_www/index.html"}},
+        {"/[...]",
+            cowboy_static, {priv_dir, ets_ui, "meta_www/"}}
     ].
