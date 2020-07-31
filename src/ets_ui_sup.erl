@@ -31,17 +31,23 @@ init([]) ->
                 intensity => 1,           % optional
                 period    => 10           % optional
             },
-            [
-                #{
-                    id       => webserver_child,               % mandatory
-                    start    => {ets_ui_http, start_link, []}, % mandatory
-                    restart  => permanent,                     % optional
-                    shutdown => brutal_kill,                   % optional
-                    type     => worker,                        % optional
-                    modules  => [ets_ui_http]                  % optional
-                }
-            ]
+            case application:get_env(ets_ui, self_start, false) of
+              false ->
+                [child()];
+              true ->
+                []
+            end
         }
+    }.
+    
+child() ->
+    #{
+        id       => webserver_child,               % mandatory
+        start    => {ets_ui_http, start_link, []}, % mandatory
+        restart  => permanent,                     % optional
+        shutdown => brutal_kill,                   % optional
+        type     => worker,                        % optional
+        modules  => [ets_ui_http]                  % optional
     }.
 
 set_otp_version() ->
