@@ -13,12 +13,24 @@
 -endif.
 
 init(Req0, Opts) ->
+    Qs = cowboy_req:qs(Req0),
+    QsMap = maps:from_list(uri_string:dissect_query(Qs)),
+    IncludeSystemTables = maps:get(<<"viewSystemTables">>, QsMap, <<"false">>),
+    %% Prob use rest handler, to check malformed request
+    case IncludeSystemTables of
+        <<"true">> ->
+            ok;
+        <<"false">> ->
+            ok
+    end,
     Req = cowboy_req:reply(
         200,
         #{
             <<"content-type">> => <<"application/json">>
         },
-        jsx:encode([{tables, tables(ets)}]),
+        jsx:encode([
+            {tables, tables(ets, erlang:binary_to_existing_atom(IncludeSystemTables))}
+        ]),
         Req0
     ),
     {ok, Req, Opts}.
@@ -26,25 +38,29 @@ init(Req0, Opts) ->
 %% -------------------------
 %% Internal
 
-tables(ets) ->
-    lists:foldl(fun all_tables/2, [], ets:all()).
+tables(ets, IncSysTbls) ->
+    lists:foldl(
+        fun(Table, Acc) ->
+            Info = ets:info(Table),
+            {name, Name} = proplists:lookup(name, Info),
+            {owner, Owner} = proplists:lookup(owner, Info),
+            RegName = get_table_reg_name(Owner),
+            case not IncSysTbls andalso exclude(Info, Name, RegName) of
+                false ->
+                    [ sanitize_map(maps:merge(#{
+                        table => Table,
+                        name => Name,
+                        reg_name => RegName},
+                    maps:from_list(ets:info(Table)))
+                    ) | Acc ];
+                true ->
+                    Acc
+            end
+        end,
+        [],
+        ets:all()
+    ).
 
-all_tables(Table, Acc) ->
-    Info = ets:info(Table),
-    {name, Name} = proplists:lookup(name, Info),
-    {owner, Owner} = proplists:lookup(owner, Info),
-    RegName = get_table_reg_name(Owner),
-    case exclude(Info, Name, RegName) of
-        false ->
-            [ sanitize_map(maps:merge(#{
-                table => Table,
-                name => Name,
-                reg_name => RegName},
-              maps:from_list(ets:info(Table)))
-              ) | Acc ];
-        true ->
-            Acc
-    end.
 %% @doc References break the json decoder
 %% @end
 sanitize_map(Map) ->

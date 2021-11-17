@@ -1,0 +1,2 @@
+io:format("Bootinf from .erlang", []).
+{ok, _} = application:ensure_all_started(ets_ui).

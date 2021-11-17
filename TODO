@@ -22,3 +22,4 @@ since the match_object will need a data type...
  ☐ Create joining functionality on page. join.html with join backend
  ☐ use erlang records as entries with keypos == 2, and add version numbers to records
  ☐ lookup with bad syntax causes a http 400 reseponse, but nothing shows up on the page
+☐ create REGEX for certain tables to be display on landing page, instead of all.

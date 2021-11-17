@@ -20,3 +20,9 @@ shell: compile rebar3
 
 rebar3:
 	@ls rebar3 || wget https://s3.amazonaws.com/rebar3/rebar3 && chmod +x rebar3
+
+ui:
+	yarn run build
+	
+ui-dev:
+	yarn run build --watch

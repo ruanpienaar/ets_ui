@@ -1,0 +1,27 @@
+{
+  "name": "ets_ui",
+  "version": "1.0.0",
+  "description": "Erlang term storage web user interface",
+  "main": "app.js",
+  "repository": "git@github.com:ruanpienaar/ets_ui.git",
+  "author": "Ruan Pienaar <ruan800@gmail.com>",
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "webpack"
+  },
+  "dependencies": {
+    "@babel/core": "^7.16.0",
+    "@babel/plugin-proposal-class-properties": "^7.16.0",
+    "@babel/preset-env": "^7.16.0",
+    "@babel/preset-react": "^7.16.0",
+    "babel-cli": "^6.26.0",
+    "babel-loader": "^8.2.3",
+    "jquery": "^3.6.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "webpack": "4.46.0",
+    "webpack-cli": "^4.9.1",
+    "webpack-dev-server": "^4.5.0"
+  },
+  "devDependencies": {}
+}

@@ -37,7 +37,10 @@ cowboy_startup() ->
             %% TODO: change this to be logging
             AssignedPort
     end,
-    logger:warning("!\n\nCowboy started on port ~p\n\n!", [UsedPort]),
+    logger:notice(#{
+        action => "Cowboy webserver started",
+        port => UsedPort
+    }),
     {ok, RanchPid}.
 
 % -spec routes() -> list({term(), atom(), term()}).

@@ -11,3 +11,6 @@ rel/example_project
 rebar.lock
 _build
 rebar3
+node_modules/
+priv/www/bundle.js
+priv/www/bundle.js.LICENSE.txt
