@@ -12,10 +12,7 @@ const EtsTableViewRows = (props) => {
                         {
                             props.rows.map((entry) =>
                                 (
-                                    <div>
-                                        <EtsTableViewRow key={rowcount++} values={entry.values} />
-                                        <hr />
-                                    </div>
+                                    <EtsTableViewRow key={rowcount++} rowcount={rowcount++} values={entry.values} />
                                 )
                             )
                         }

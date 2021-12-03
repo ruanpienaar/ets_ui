@@ -10,7 +10,7 @@ export default class EtsUiApp extends React.Component {
         viewSystemTables: false,
         liveView: false, // allow for live-view(ws), or polling(GET calls)
         tables: [],
-        pagesize: 20,
+        pagesize: 3,
         tableRows: [],
         showTables: undefined,
         showTableRows: undefined
