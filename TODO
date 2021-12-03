@@ -23,3 +23,4 @@ since the match_object will need a data type...
  ☐ use erlang records as entries with keypos == 2, and add version numbers to records
  ☐ lookup with bad syntax causes a http 400 reseponse, but nothing shows up on the page
 ☐ create REGEX for certain tables to be display on landing page, instead of all.
+☐ whatsup with bag/duplicate bag? Why is that not a valid table for ets_ui ?

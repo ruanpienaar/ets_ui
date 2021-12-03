@@ -21,26 +21,49 @@
 %% rename continuation to ContinuationPid
 
 init(Req, StateMap) ->
-    case parse_query_string_into_map(Req) of
-        #{ table := Table } = QueryStringMap when is_atom(Table) ->
-            ?LOG_DEBUG(QueryStringMap#{ step => decoded_query_string }),
-            {ResponseCode, Json} =
-            handle_request(
-                QueryStringMap,
-                StateMap#{
-                    table => Table,
-                    table_info => ets:info(Table)
+    try
+        case parse_query_string_into_map(Req) of
+            #{ table := Table } = QueryStringMap when is_atom(Table) ->
+                ?LOG_DEBUG(QueryStringMap#{ step => decoded_query_string }),
+                {ResponseCode, Json} =
+                handle_request(
+                    QueryStringMap,
+                    StateMap#{
+                        table => Table,
+                        table_info => ets:info(Table)
+                    }
+                ),
+                ets_ui_common:create_reply(
+                    ResponseCode, Json, Req, StateMap);
+            #{ table := {error, undefined_table} } ->
+                ErrorJson = ets_ui_common:json_sanitize({error, table_does_not_exist}),
+                ets_ui_common:create_reply(
+                    400, ErrorJson, Req, StateMap);
+            #{ table := {error, unsuitable_table} } ->
+                ets_ui_common:create_reply(
+                    400, <<"Unsuitable table. Either protection == private and/or Type == bag | Type == duplicate_bag">>, Req, StateMap)
+        end
+    catch
+        %% This exists, cause erlang:get_stacktrace() was deprecated in 24, and now cowboy is behind.
+        exit:{
+            request_error,
+            {
+                match_qs,
+                #{
+                    table := {_, unsuitable_table, _Table}
                 }
-            ),
+            },
+            'Query string validation constraints failed for the reasons provided.'
+        }:_Stacktrace ->
             ets_ui_common:create_reply(
-                ResponseCode, Json, Req, StateMap);
-        #{ table := {error, undefined_table} } ->
-            ErrorJson = ets_ui_common:json_sanitize({error, table_does_not_exist}),
-            ets_ui_common:create_reply(
-                400, ErrorJson, Req, StateMap);
-        #{ table := {error, unsuitable_table} } ->
-            ets_ui_common:create_reply(
-                400, <<"Unsuitable table. Either protection == private and/or Type == bag | Type == duplicate_bag">>, Req, StateMap)
+                    400, <<"Unsuitable table. Either protection == private and/or Type == bag | Type == duplicate_bag">>, Req, StateMap);
+        %% TODO: add exit handle for other checks ( tuple_wildcard, fun str )
+        C:E:Stacktrace ->
+            ?LOG_DEBUG(#{
+                c => C,
+                e => E,
+                s => Stacktrace
+            })
     end.
 
 parse_query_string_into_map(Req) ->
