@@ -2,7 +2,7 @@ import React from 'react';
 import EtsTableViewRow from './EtsTableViewRow'
 
 const EtsTableViewRows = (props) => {
-    console.log('EtsTableViewRows.props.rows '+props.rows);
+    //console.log('EtsTableViewRows.props.rows '+props.rows);
     let rowcount = 0;
     if ( props.rows.length > 0 ) {
         return (

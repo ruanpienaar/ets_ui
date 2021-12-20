@@ -1,4 +1,21 @@
+ ☐ create entries pagination ( next only - feature parity ) keeping the app simple, and the table continuation simple too.
+
+ ☐ results per page select drop-down working, fetch more/less when changed
+ ☐ store results per page in local storage
+
+ ☐ create heading sort function on tables page
  ☐ sort table on name by default, and allow sorting to be stored in LocalStorage
+ ☐ create process info lookup from PID, <0.280.0>
+ ☐ create links to erlang documentation from ets table options
+ ☐ Add ets lookup functionality
+ ☐ Add ets match_lookup functionality
+ ☐ Add ets match functionality
+ ☐ Add ets select query functionality
+ ☐ pretty print erlang datastructures on entry view ( simmilar to what the shell does )
+ ☐ create edit feature for entry
+ ☐ create delete feature for entry
+ ☐ create match_delete feature for entry
+ ☐ add other ets table entry functions from erlang docs onto page ( check what ets:* functions there are for data entries)
  ☐ create table checker on table value on query mod
  ☐ use rest on cowboy_handler modules
  ☐ Add some system related items to the dashboard too
@@ -6,15 +23,10 @@
     38
     17> erlang:system_info(ets_limit).
     8192
-☐ Run ranch server on port 0 - 2> ranch_server:get_addr(ets_ui_http).
-  {{0,0,0,0},42587}
-☐ make a "use this key" button under each row, to fill in the key in the search textbox
-☐ create functionality for going back on pages
-☐ don't have to reverse results, reads a bit weird on page
-
-each field needs a data type, so that people can see whether a field was a string or atom
-since the match_object will need a data type...
- ☐
+ ☐ make a "use this key" button under each row, to fill in the key in the search textbox
+ ☐ create functionality for going back on pages
+ ☐ don't have to reverse results, reads a bit weird on page
+ ☐ each field needs a data type, so that people can see whether a field was a string or atom since the match_object will need a data type...
  ☐ create item on query page, where you can generate the weird
    ets query match specs 3 x '_' = {'_', '_', '_'} OR
    Key = 'abc' + ( 3 x '_' ) = {'abc', '_', '_', '_'}
@@ -22,5 +34,5 @@ since the match_object will need a data type...
  ☐ Create joining functionality on page. join.html with join backend
  ☐ use erlang records as entries with keypos == 2, and add version numbers to records
  ☐ lookup with bad syntax causes a http 400 reseponse, but nothing shows up on the page
-☐ create REGEX for certain tables to be display on landing page, instead of all.
-☐ whatsup with bag/duplicate bag? Why is that not a valid table for ets_ui ?
+ ☐ create REGEX for certain tables to be display on landing page, instead of all. & create page filter/search textbox
+ ☐ whatsup with bag/duplicate bag? Why is that not a valid table for ets_ui ?

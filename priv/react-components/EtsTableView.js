@@ -1,5 +1,6 @@
 import React from 'react';
 import EtsTableViewRows from './EtsTableViewRows';
+import EtsTableViewNextRows from './EtsTableViewNextRows'
 
 const EtsTableView = (props) => (
     <div>
@@ -12,6 +13,7 @@ const EtsTableView = (props) => (
             <option value="100">100</option>
         </select>
         <EtsTableViewRows rows={props.rows} />
+        <EtsTableViewNextRows nextEntries={props.nextEntries} continuation={props.continuation} />
     </div>
 );
 

@@ -31,7 +31,7 @@ const EtsTables = (props) => {
                 {
                     props.tables.map((t) => (
                         <tr key={t.name}>
-                            <td><button onClick={() => props.viewTable(t.name)}>View</button></td>
+                            <td><button onClick={() => props.queryTable(t.name)}>View</button></td>
                             <td>{t.name}</td>
                             <td>{t.size}</td>
                             <td>{t.reg_name}</td>
