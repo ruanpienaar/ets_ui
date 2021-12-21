@@ -5,6 +5,7 @@ import EtsTableView from './EtsTableView.js';
 import $ from "jquery";
 
 // TODO: make the table-view / entry-view boolean flags, into function to simplify & prevent bugs.
+// TODO: create init state function. state management is getting messy
 
 export default class EtsUiApp extends React.Component {
     state = {
@@ -12,21 +13,34 @@ export default class EtsUiApp extends React.Component {
         liveView: false, // allow for live-view(ws), or polling(GET calls)
         tables: [],
         selectedTable: undefined,
-        pagesize: 3,
+        pagesize_options: [5, 10, 20, 50],
+        pagesize: undefined,
         tableRows: [],
         showTables: undefined,
         showTableRows: undefined,
-        continuation: undefined
+        continuation: undefined,
+        resetQuery: undefined
     }
     setStateTables = (tables) => {
         //const table_names = tables.map((t) => (t.name));
         if(tables !== this.state.tables) {
             //console.log(' tables has changed sine last time '+this.state.tables);
             //console.log(' the new tables are '+tables);
+            //let pagesize = this.state.pagesize_options[0];
+            const lsPagesize = localStorage.getItem('pagesize');
+            let pagesize = this.state.pagesize_options[0];
+            if(lsPagesize){
+                pagesize = lsPagesize;
+            }
             this.setState((prevState) => ({
+                selectedTable: undefined,
                 showTables: true,
                 showTableRows: false,
-                tables: tables
+                tableRows: undefined,
+                tables: tables,
+                pagesize: pagesize,
+                continuation: undefined,
+                resetQuery: undefined
             }));
         } else {
             //console.log('state did not change...');
@@ -51,12 +65,16 @@ export default class EtsUiApp extends React.Component {
             showTables: false,
             showTableRows: true,
             tableRows: data.rows,
-            continuation: data.continuation
+            continuation: data.continuation,
+            resetQuery: undefined
         }));
     }
     // TODO: do we need encodeURIComponent( in URI components ?
     queryTable = (selectedTable) => {
-        console.log('fetch data for table '+selectedTable+' pagesize '+ this.state.pagesize);
+        if(!selectedTable){
+            selectedTable=this.state.selectedTable;
+        }
+        console.log('queryTable table='+selectedTable+' pagesize='+ this.state.pagesize+' continuation='+this.state.continuation);
         const sr = this.setStateRows;
         let queryArgs = {
             table: selectedTable,
@@ -65,7 +83,8 @@ export default class EtsUiApp extends React.Component {
         if(this.state.continuation){
             queryArgs.continuation = this.state.continuation;
         }
-        console.log(queryArgs);
+        console.log('query arguments ');
+        Object.keys(queryArgs).forEach(prop => console.log('prop='+prop+'value='+queryArgs[prop]));
         $.get("/api/query", queryArgs)
         .done(function(data) {
             sr(selectedTable, data)
@@ -76,6 +95,7 @@ export default class EtsUiApp extends React.Component {
         console.log('state.liveView = '+this.state.liveView);
         console.log('state.tables = '+this.state.tables);
         console.log('state.selectedTable = '+this.state.selectedTable);
+        console.log('state.pagesize_options = '+this.state.pagesize_options);
         console.log('state.pagesize = '+this.state.pagesize);
         console.log('state.tableRows = '+this.state.tableRows);
         console.log('state.showTables = '+this.state.showTables);
@@ -84,8 +104,35 @@ export default class EtsUiApp extends React.Component {
     }
     nextEntries = () => {
         console.log('fetch data for table '+this.state.selectedTable+' pagesize '+ this.state.pagesize);
-        this.queryTable(this.state.selectedTable);
+        this.queryTable();
     }
+    changePagesize = (selectedObject) => {
+        //Object.keys(selectedObject).forEach(prop => console.log(prop));
+        //console.log('changePagesize='+selectedObject.target.value);
+        const pagesize = selectedObject.target.value;
+        localStorage.setItem('pagesize', pagesize);
+        this.setState(() => ({
+            pagesize: pagesize,
+            continuation: undefined,
+            resetQuery: true
+        }));
+    }
+    tableView = () => (
+            <EtsTables
+                tables={this.state.tables}
+                queryTable={this.queryTable}
+            />
+    );
+    entriesView = () => (
+        <EtsTableView
+            rows={this.state.tableRows}
+            nextEntries={this.nextEntries}
+            continuation={this.state.continuation}
+            pagesize={this.state.pagesize}
+            pagesize_options={this.state.pagesize_options}
+            changePagesize={this.changePagesize}
+        />
+    );
     componentDidMount(){
         // NB! dumb assumption that hosting on HTTPS,
         //     will also have WSS calls to backend.
@@ -106,7 +153,12 @@ export default class EtsUiApp extends React.Component {
             // view system tables state changed (button press), fetch tables again...
             this.fetchTables();
         }
-        //console.log('state.viewSystemTables '+this.state.viewSystemTables);
+        // here we assume, that the user is querying the table
+        // console.log('componentDidUpdate this.state.continuation = '+this.state.continuation);
+        // console.log('componentDidUpdate this.state.resetQuery = '+this.state.resetQuery);
+        if( this.state.resetQuery ) {
+            this.nextEntries();
+        }
     }
     render(){
         return (
@@ -117,8 +169,8 @@ export default class EtsUiApp extends React.Component {
                     viewSystemTables={this.state.viewSystemTables}
                     fetchTables={this.fetchTables}
                 />
-                { this.state.showTables && <EtsTables tables={this.state.tables} queryTable={this.queryTable} /> }
-                { this.state.showTableRows && <EtsTableView rows={this.state.tableRows} nextEntries={this.nextEntries} continuation={this.state.continuation} /> }
+                { this.state.showTables && this.tableView() }
+                { this.state.showTableRows && this.entriesView() }
             </div>
         );
     }

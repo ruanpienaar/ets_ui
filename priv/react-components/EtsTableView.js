@@ -1,20 +1,20 @@
 import React from 'react';
 import EtsTableViewRows from './EtsTableViewRows';
-import EtsTableViewNextRows from './EtsTableViewNextRows'
-
+import EtsTableViewPagesize from './EtsTableViewPagesize';
+import EtsTableViewNextRows from './EtsTableViewNextRows';
 const EtsTableView = (props) => (
     <div>
         <hr />
-        <button>hide results</button>
-        <select id="pagesize" className="btn btn-primary">
-            <option value="3">3</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-        </select>
+        <EtsTableViewPagesize
+            pagesize={props.pagesize}
+            pagesize_options={props.pagesize_options}
+            changePagesize={props.changePagesize}
+        />
+        <EtsTableViewNextRows
+            nextEntries={props.nextEntries}
+            continuation={props.continuation}
+        />
         <EtsTableViewRows rows={props.rows} />
-        <EtsTableViewNextRows nextEntries={props.nextEntries} continuation={props.continuation} />
     </div>
 );
-
 export default EtsTableView;

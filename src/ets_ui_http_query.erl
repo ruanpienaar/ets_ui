@@ -121,7 +121,7 @@ is_table_ref(Table) ->
     end.
 
 %% @doc
-%% Bag tables break the lookup by key, since a table might have thousands/milions of records with the same key
+%% Duplicate bag tables break the lookup by key, since a table might have thousands/milions of records with the same key
 %% and therefore doing a lookup might cause harm to the running node.
 %% Protection type private is only readible by the owner, so it's not useful for this tool. Yet.
 %% Maybe we could make a callback behaviour in the private owners, so that this tool can call into that.

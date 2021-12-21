@@ -4,7 +4,6 @@ const EtsTables = (props) => {
     // console.log(props.tables);
     return (
         <div>
-            <button>hide tables</button>
             <table>
                 <thead>
                     <tr>
