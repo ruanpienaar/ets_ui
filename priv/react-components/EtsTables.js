@@ -1,7 +1,10 @@
 import React from "react";
-
 const EtsTables = (props) => {
     // console.log(props.tables);
+
+    // <th><a href="#">Select All</a></th>
+    //   <td><input type="checkbox" onChange={() => console.log('select table')} /></td>
+
     return (
         <div>
             <table>
@@ -30,7 +33,7 @@ const EtsTables = (props) => {
                 {
                     props.tables.map((t) => (
                         <tr key={t.name}>
-                            <td><button onClick={() => props.queryTable(t.name)}>View</button></td>
+                            <td><button onClick={() => props.queryTable(t.name, 'page')}>View</button></td>
                             <td>{t.name}</td>
                             <td>{t.size}</td>
                             <td>{t.reg_name}</td>
@@ -55,5 +58,4 @@ const EtsTables = (props) => {
     </div>
     );
 }
-
 export default EtsTables

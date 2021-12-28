@@ -130,9 +130,9 @@ suitable_table(TableInfo) ->
     case [proplists:lookup(type, TableInfo),
           proplists:lookup(protection, TableInfo)]
     of
-        [{type, bag},
-         _] ->
-            false;
+        % [{type, bag},
+        %  _] ->
+        %     false;
         [_,
          {protection, private}] ->
             false;
@@ -378,17 +378,21 @@ get_next_n_objects(Table, Continuation, PageSize) when PageSize > 0 ->
 %% @end
 % get_next_n_objects(Table, 0, Key, _, R) ->
 %% TODO: improve. we reverse twice, once here, and another in json_rows ...
-get_next_n_objects(Table, PageCount, Key, [Entry], R) ->
+get_next_n_objects(Table, PageCount, Key, Entries, R) when is_list(Entries) ->
     case ets:next(Table, Key) of
         '$end_of_table' ->
-            #{entries => lists:reverse([Entry|R])};
+            #{
+                entries => lists:append(R, Entries) % lists:reverse([Entry|R])
+            };
         NextKey ->
             case PageCount-1 of
                 0 ->
-                    #{continuation => ets:next(Table, Key),
-                      entries => lists:reverse([Entry|R])};
+                    #{
+                        continuation => ets:next(Table, Key),
+                        entries => lists:append(R, Entries) % lists:reverse([Entry|R])
+                    };
                 NewPageCount ->
-                    get_next_n_objects(Table, NewPageCount, NextKey, ets:lookup(Table, NextKey), [Entry|R])
+                    get_next_n_objects(Table, NewPageCount, NextKey, ets:lookup(Table, NextKey), lists:append(R, Entries)) % [Entry|R])
             end
     end.
 

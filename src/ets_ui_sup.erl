@@ -15,7 +15,34 @@
 %% ===================================================================
 
 start_link() ->
+
+    tbl = ets:new(tbl, [ordered_set, public, named_table]),
+    tbl2 = ets:new(tbl2, [set, public, named_table]),
+    tbl3 = ets:new(tbl3, [bag, public, named_table]),
+    tbl4 = ets:new(tbl4, [duplicate_bag, public, named_table]),
+    DoInsert = fun(X) ->
+        true = ets:insert(tbl, {X, true}),
+        true = ets:insert(tbl2, {X, true}),
+        true = ets:insert(tbl3, make_random_tuple(X)),
+        true = ets:insert(tbl4, make_random_tuple(X))
+    end,
+    ok = lists:foreach(
+        fun(X) ->
+            true = DoInsert(X),
+            true = DoInsert(X),
+            true = DoInsert(X),
+            true = DoInsert(X),
+            true = DoInsert(X),
+            true = DoInsert(X),
+            true = DoInsert(X),
+            true = DoInsert(X)
+        end,
+        lists:seq(0, 1000)
+    ),
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+
+make_random_tuple(X) ->
+    erlang:setelement(1, list_to_tuple(lists:seq(1, round(rand:uniform() * 10) + 2)), X).
 
 %% ===================================================================
 %% Supervisor callbacks

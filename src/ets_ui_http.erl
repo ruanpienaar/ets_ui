@@ -1,13 +1,10 @@
 -module(ets_ui_http).
 
 -export([
-    start_link/0
+    start_link/0,
+    routes/0
 ]).
-
-
-
 % -spec start_link() -> {ok, pid()}.
-
 start_link() ->
     {ok, Pid} = cowboy_startup(),
     true = erlang:link(Pid),
@@ -46,8 +43,10 @@ cowboy_startup() ->
 % -spec routes() -> list({term(), atom(), term()}).
 routes() ->
     [
-        {"/help",
+        {"/api/help",
             ets_ui_http_help, #{}},
+        {"/api/list_tables",
+            ets_ui_http_list_tables, #{}},
         {"/api/tables",
             ets_ui_http_tables, #{}},
         {"/api/table/info/:table",

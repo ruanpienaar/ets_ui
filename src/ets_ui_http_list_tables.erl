@@ -1,4 +1,4 @@
--module(ets_ui_http_time).
+-module(ets_ui_http_list_tables).
 
 -behaviour(cowboy_handler).
 
@@ -11,9 +11,7 @@ init(Req, StateMap) ->
         <<"GET">> ->
             ets_ui_common:create_reply(
                 200,
-                jsx:encode(
-                    binary_to_list(erlang:term_to_binary(calendar:universal_time()))
-                ),
+                jsx:encode(lists:map(fun(Tbl) -> ets_ui_common:json_sanitize(Tbl) end, ets:all())),
                 Req,
                 StateMap
             )

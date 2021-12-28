@@ -1,6 +1,5 @@
 import React from 'react';
 import EtsTableViewRow from './EtsTableViewRow'
-
 const EtsTableViewRows = (props) => {
     //console.log('EtsTableViewRows.props.rows '+props.rows);
     let rowcount = 0;
@@ -24,5 +23,4 @@ const EtsTableViewRows = (props) => {
         return '';
     }
 }
-
 export default EtsTableViewRows;
