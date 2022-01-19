@@ -1,6 +1,5 @@
 import React from "react";
 import EtsHeader from './EtsHeader';
-import EtsQuery from './EtsQuery';
 import EtsTables from "./EtsTables";
 import EtsTableView from './EtsTableView.js';
 import $ from "jquery";
