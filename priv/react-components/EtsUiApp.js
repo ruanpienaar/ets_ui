@@ -1,5 +1,6 @@
 import React from "react";
 import EtsHeader from './EtsHeader';
+import EtsQuery from './EtsQuery';
 import EtsTables from "./EtsTables";
 import EtsTableView from './EtsTableView.js';
 import $ from "jquery";
@@ -194,6 +195,24 @@ export default class EtsUiApp extends React.Component {
             resetQuery: true
         }));
     }
+    headerView = () => (
+        <EtsHeader
+            logState={this.logState}
+            toggleViewSystemTables={this.toggleViewSystemTables}
+            viewSystemTables={this.state.viewSystemTables}
+            fetchTables={this.fetchTables}
+            toggleViewQuery={this.toggleViewQuery}
+        />
+    );
+    queryView = () => (
+        <EtsQuery
+            viewQuery={this.state.viewQuery}
+            queryTables={this.state.queryTables}
+            lookupQuery={this.lookupQuery}
+            matchQuery={this.matchQuery}
+            matchObjectQuery={this.matchObjectQuery}
+        />
+    );
     tableView = () => (
             <EtsTables
                 tables={this.state.tables}
@@ -208,12 +227,6 @@ export default class EtsUiApp extends React.Component {
             pagesize={this.state.pagesize}
             pagesize_options={this.state.pagesize_options}
             changePagesize={this.changePagesize}
-
-            viewQuery={this.state.viewQuery}
-            queryTables={this.state.queryTables}
-            lookupQuery={this.lookupQuery}
-            matchQuery={this.matchQuery}
-            matchObjectQuery={this.matchObjectQuery}
         />
     );
     componentDidMount(){
@@ -247,13 +260,8 @@ export default class EtsUiApp extends React.Component {
         //console.log('EtsUiApp.render()');
         return (
             <div>
-                <EtsHeader
-                    logState={this.logState}
-                    toggleViewSystemTables={this.toggleViewSystemTables}
-                    toggleViewQuery={this.toggleViewQuery}
-                    viewSystemTables={this.state.viewSystemTables}
-                    fetchTables={this.fetchTables}
-                />
+                { this.headerView() }
+                { this.state.viewQuery && this.queryView() }
                 { this.state.showTables && this.tableView() }
                 { this.state.showTableRows && this.entriesView() }
             </div>

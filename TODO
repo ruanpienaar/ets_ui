@@ -1,36 +1,35 @@
-☐ create FE query portion that stays on table-view/entries-view
-☐ create query open/close ( toggle ) to save ui space
-☐ store query portion opened/not-opened in LocalStorage.
+---
 
-☐ create API for checking match/match-object/select MatchSpec/MatchTuple.
+☐ Add ets select query functionality
 
-☐ lookup, with many results per key ( tbl4, key: 935 ) creates 8 entries, but pagesize of 5, shows 'from-beginning-button'. likely as continuation is set to 'undefined'
 
-☐ allow for multiple selected tables to run multiple queries ( how are we going to show that ? results per table maybe ? )
-
-☐ change table fetch to be done in EtsUiApp constructure instead of re-render after state change
 
 ☐ store viewSystemTables in LocalStorage
 ☐ update front-end to auto use LocalStorage for showing system tables
 
+☐ create query open/close ( toggle ) to save ui space
+☐ store query portion opened/not-opened in LocalStorage.
+
+☐ create API for checking match/match-object/select MatchSpec/MatchTuple.
+☐ lookup, with many results per key ( tbl4, key: 935 ) creates 8 entries, but pagesize of 5, shows 'from-beginning-button'. likely as continuation is set to 'undefined'
+☐ change table fetch to be done in EtsUiApp constructor instead of re-render after state change / ☐ find a nicer way of looking up tables as app/web starts.
 ☐ create front-end for altering entry? pencil/trash-can next to entry?
 ☐ create alter query part on FE ( edit/delete entries )
-
+☐ create tuple match builder, { x, '_' } etc
+☐ allow for multiple selected tables to run multiple queries ( how are we going to show that ? results per table maybe ? )
 ☐ use axios instead of jQuery for HTTP calls ( https://malcoded.com/posts/react-http-requests-axios/ )
-
 ☐ pagination broken with bag/duplicate bag tables, as first/next returns a list of entries for each key. could argue, that can be left as is, investigate.
-☐ handle empty tables better
+
 ☐ components/JS are not running in strict mode ( https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode )
-☐ find a nicer way of looking up tables as app/web starts.
+
 ☐ store results per page in local storage
-☐ create heading sort function on tables page
+☐ create heading sort function on tables page, so you can sort on cols
 ☐ sort table on name by default, and allow sorting to be stored in LocalStorage
 ☐ create process info lookup from PID, <0.280.0>
 ☐ create links to erlang documentation from ets table options
-☐ Add ets lookup functionality
-☐ Add ets match_lookup functionality
-☐ Add ets match functionality
-☐ Add ets select query functionality
+
+
+
 ☐ pretty print erlang datastructures on entry view ( simmilar to what the shell does )
 ☐ create edit feature for entry
 ☐ create delete feature for entry
@@ -65,3 +64,5 @@
 #☐ results per page select drop-down working, fetch more/less when changed
 #☐ HANDLE bag/duplicate bag table entries - whatsup with bag/duplicate bag? Why is that not a valid table for ets_ui ?
 #☐ create simple list-all-tables API lookup for query-portion
+#☐ create FE query portion that stays on table-view/entries-view
+# ☐ increase font size on query part

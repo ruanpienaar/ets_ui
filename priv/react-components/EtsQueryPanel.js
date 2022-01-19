@@ -18,22 +18,22 @@ const EtsQueryPanel = (props) => (
                         </ul>
                     </td>
                     <td>Lookup Key</td>
-                    <td><input type="text" id="lookup_key" name="lookup_key" /></td>
+                    <td><input type="text" id="lookup_key" name="lookup_key" className='EtsQueryInput' size="100" /></td>
                     <td><button disabled={props.queryTables.length <= 0 } onClick={props.lookupQuery}>Lookup</button></td>
                 </tr>
                 <tr>
                     <td>Match (*Tuple Expr)</td>
-                    <td><input type="text" id="match" name="match" /></td>
+                    <td><input type="text" id="match" name="match" className='EtsQueryInput' size="100" /></td>
                     <td><button disabled={props.queryTables.length <= 0 } onClick={props.matchQuery}>Match</button></td>
                 </tr>
                 <tr>
                     <td>Match Object (*Tuple Expr)</td>
-                    <td><input type="text" id="match_object" name="match_object" /></td>
+                    <td><input type="text" id="match_object" name="match_object"  className='EtsQueryInput' size="100"/></td>
                     <td><button disabled={props.queryTables.length <= 0 } onClick={props.matchObjectQuery}>Match Object</button></td>
                 </tr>
                 <tr>
                     <td>MatchSpec (*Tuple Expr)</td>
-                    <td><input type="text" id="select" name="select" /></td>
+                    <td><input type="text" id="select" name="select"  className='EtsQueryInput' size="100"/></td>
                     <td><button disabled={props.queryTables.length <= 0 } onClick={props.SelectQuery}>Select</button></td>
                 </tr>
             </tbody>

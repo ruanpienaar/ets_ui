@@ -34,3 +34,7 @@ code {
     padding: 5px;
     border: 1px solid gray;
 }
+
+.EtsQueryInput {
+    font-size:36px;
+}
