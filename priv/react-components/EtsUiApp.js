@@ -209,6 +209,12 @@ export default class EtsUiApp extends React.Component {
             pagesize={this.state.pagesize}
             pagesize_options={this.state.pagesize_options}
             changePagesize={this.changePagesize}
+
+            viewQuery={this.state.viewQuery}
+            queryTables={this.state.queryTables}
+            lookupQuery={this.lookupQuery}
+            matchQuery={this.matchQuery}
+            matchObjectQuery={this.matchObjectQuery}
         />
     );
     componentDidMount(){
@@ -248,13 +254,6 @@ export default class EtsUiApp extends React.Component {
                     toggleViewQuery={this.toggleViewQuery}
                     viewSystemTables={this.state.viewSystemTables}
                     fetchTables={this.fetchTables}
-                />
-                <EtsQuery
-                    viewQuery={this.state.viewQuery}
-                    queryTables={this.state.queryTables}
-                    lookupQuery={this.lookupQuery}
-                    matchQuery={this.matchQuery}
-                    matchObjectQuery={this.matchObjectQuery}
                 />
                 { this.state.showTables && this.tableView() }
                 { this.state.showTableRows && this.entriesView() }
